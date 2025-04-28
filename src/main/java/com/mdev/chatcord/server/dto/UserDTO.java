@@ -12,10 +12,9 @@ public class UserDTO {
 
     private String username;
     private String tag;
-    private String userSocket;
     private String lastMessage;
     private String profileImageURL = "/images/default_pfp.png";
-    private EStatus eStatus = EStatus.Offline;
+    private EStatus eStatus = EStatus.OFFLINE;
 
     public UserDTO(String username, String tag){
         super();

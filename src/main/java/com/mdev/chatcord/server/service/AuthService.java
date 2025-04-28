@@ -25,8 +25,8 @@ public class AuthService {
     public String signIn(String email, String key){
         User user = userRepository.findByEmail(email);
         if (user != null && passwordEncoder.matches(key, user.getPassword())){
-            user.setStatus(EStatus.Online);
             logger.info("Username [{}] logged in successfully.", user.getUsername());
+            user.setStatus(EStatus.ONLINE);
             return jwtService.generateToken(user.getUsername(), user.getTag());
         }
         else
@@ -50,7 +50,7 @@ public class AuthService {
 
     public void logoutUser(String username, String tag){
         User user = userRepository.findByUsernameAndTag(username, tag);
-        user.setStatus(EStatus.Offline);
+        user.setStatus(EStatus.OFFLINE);
     }
 
     public void signUp(String email, String username, String key){
@@ -61,10 +61,11 @@ public class AuthService {
             user.setUsername(username);
             user.setPassword(passwordEncoder.encode(key));
             user.setTag(generateTag());
-            user.setStatus(EStatus.Offline);
+            user.setStatus(EStatus.OFFLINE);
             userRepository.save(user);
+
         } catch (Exception e){
-            System.out.println("User already registered with this username.");
+            logger.info("User already registered with this username.");
         }
     }
 }

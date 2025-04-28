@@ -14,10 +14,11 @@ public class User {
     private Long uid;
 
     private String username;
+    private String tag;
     private String Password;
     private String email;
-    private String tag;
-    private String profileImageURL = "/images/default_pfp.png";
-    private String messagesHistory;
-    private EStatus Status;
+    private ERoles role;
+
+    private EStatus status = EStatus.OFFLINE;
+    private String userSocket;
 }
