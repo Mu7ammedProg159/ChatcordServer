@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.service;
 
+import com.mdev.chatcord.server.model.ERoles;
 import com.mdev.chatcord.server.model.User;
 import com.mdev.chatcord.server.repository.UserRepository;
 import io.jsonwebtoken.JwtException;
@@ -32,7 +33,7 @@ public class JwtService {
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(60 * 30))
                 .subject(user.getEmail())
-                .claim("role", user.getRoles().stream().map(Enum::name))
+                .claim("roles", user.getRoles().stream().map(Enum::name).collect(Collectors.joining(" ")))
                 .build();
 
         return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
