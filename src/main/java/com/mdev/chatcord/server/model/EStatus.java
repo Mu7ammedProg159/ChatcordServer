@@ -5,4 +5,5 @@ public enum EStatus {
     OFFLINE,
     DONOTDISTURB,
     IDLE
+
 }
