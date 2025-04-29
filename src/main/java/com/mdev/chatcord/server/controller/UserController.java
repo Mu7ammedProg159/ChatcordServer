@@ -7,15 +7,19 @@ import com.mdev.chatcord.server.model.LoginResponse;
 import com.mdev.chatcord.server.model.User;
 import com.mdev.chatcord.server.repository.UserRepository;
 import com.mdev.chatcord.server.service.JwtService;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -34,14 +38,19 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) throws UsernameNotFoundException {
-        var auth = new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword());
-        authenticationManager.authenticate(auth);
-
         try {
+            var auth = new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword());
+            authenticationManager.authenticate(auth);
+
             User user = userRepository.findByEmail(loginRequest.getEmail());
             var token = jwtService.generateToken(user);
-            logger.info("THsi user Should Have been Logged In: " + user.getEmail());
+
+            logger.info("User with this Email Address: [{}] Logged In Successfully.", user.getEmail());
+
             return ResponseEntity.ok(new LoginResponse(token));
+        } catch (InternalAuthenticationServiceException iE){
+            throw new InternalAuthenticationServiceException("This is error regarding the INTERNAL AUTHENTICATION SERVICE " + iE.getMessage());
+
         } catch (UsernameNotFoundException e){
             throw new UsernameNotFoundException("Account with this Email Address not found.");
         }
@@ -60,5 +69,22 @@ public class UserController {
         userRepository.save(user);
 
         return ResponseEntity.ok("User Registered Successfully");
+    }
+
+    @PostMapping("/authenticate")
+    public String authenticate(Authentication authentication){
+        return authentication.getDetails().toString();
+    }
+
+    @DeleteMapping("/delete/user")
+    public ResponseEntity<?> deleteUser(Authentication authentication){
+        try{
+            String email = authentication.getName();
+            userRepository.deleteByEmail(email);
+            return ResponseEntity.ok("User with this Email Address [" + email + "] has been deleted.");
+
+        } catch (UsernameNotFoundException e){
+            throw new UsernameNotFoundException("Account with this Email Address not found.");
+        }
     }
 }

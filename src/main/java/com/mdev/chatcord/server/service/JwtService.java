@@ -49,23 +49,17 @@ public class JwtService {
         return String.valueOf(id);
     }
 
-//    public String generateToken(Authentication authentication){
-//        var claims = JwtClaimsSet.builder()
-//                .issuer("self")
-//                .issuedAt(Instant.now())
-//                .expiresAt(Instant.now().plusSeconds(60 * 30))
-//                .subject(authentication.getName())
-//                .claim("scope", createScope(authentication))
-//                .build();
-//
-//        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
-//
-////        return Jwts.builder()
-////                .setSubject(username + "#" + tag)
-////                .setIssuedAt(new Date())
-////                .setExpiration(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
-////                .compact();
-//    }
+    public String generateToken(Authentication authentication){
+        var claims = JwtClaimsSet.builder()
+                .issuer("self")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(60 * 30))
+                .subject(authentication.getName())
+                .claim("scope", createScope(authentication))
+                .build();
+
+        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+    }
 
     private String createScope(Authentication authentication) {
         return authentication.getAuthorities().stream()
