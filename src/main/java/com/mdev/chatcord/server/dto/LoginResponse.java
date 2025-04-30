@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server.model;
+package com.mdev.chatcord.server.dto;
 
 import lombok.AllArgsConstructor;
 

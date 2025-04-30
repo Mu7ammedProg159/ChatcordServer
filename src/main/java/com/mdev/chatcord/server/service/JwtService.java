@@ -29,11 +29,11 @@ public class JwtService {
 
     public String generateToken(User user){
         var claims = JwtClaimsSet.builder()
-                .issuer("self")
+                .issuer("http://localhost:8080")
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(60 * 30))
                 .subject(user.getEmail())
-                .claim("roles", user.getRoles().stream().map(Enum::name).collect(Collectors.joining(" ")))
+                .claim("scope", user.getRoles().stream().map(Enum::name).collect(Collectors.joining(" ")))
                 .build();
 
         return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
@@ -52,7 +52,7 @@ public class JwtService {
 
     public String generateToken(Authentication authentication){
         var claims = JwtClaimsSet.builder()
-                .issuer("self")
+                .issuer("http://localhost:8080")
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(60 * 30))
                 .subject(authentication.getName())

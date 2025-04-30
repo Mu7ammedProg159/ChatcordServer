@@ -1,8 +1,6 @@
-package com.mdev.chatcord.server.model;
+package com.mdev.chatcord.server.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @Getter

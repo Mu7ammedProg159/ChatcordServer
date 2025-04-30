@@ -23,7 +23,6 @@ public class UserPrincipleService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email);
-        System.out.println("User password in DB (bcrypt): " + user.getPassword());
         return new UserPrinciple(user);
     }
 }

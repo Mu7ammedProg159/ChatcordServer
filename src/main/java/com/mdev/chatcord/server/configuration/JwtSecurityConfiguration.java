@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplicationAotProcessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -31,7 +32,9 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
 import java.math.BigInteger;
@@ -43,6 +46,7 @@ import java.util.UUID;
 
 @Configuration
 @EnableWebSecurity
+@EnableAsync
 public class JwtSecurityConfiguration {
 
     private final UserDetailsService userDetailsService;
@@ -55,7 +59,7 @@ public class JwtSecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
-                    .requestMatchers("/api/auth/login", "/api/auth/register").hasRole("USER")
+                    .requestMatchers("/api/auth/**").permitAll()
                     .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
@@ -64,7 +68,8 @@ public class JwtSecurityConfiguration {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.disable())
             .oauth2ResourceServer(oauth2 -> oauth2
-                    .jwt(Customizer.withDefaults())    // <— updated
+                    .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                    // <— updated
             )
             .userDetailsService(userDetailsService)
             .authenticationProvider(authenticationProvider());
@@ -75,6 +80,18 @@ public class JwtSecurityConfiguration {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
+
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter(){
+        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        authoritiesConverter.setAuthorityPrefix("ROLE_");
+        authoritiesConverter.setAuthoritiesClaimName("scope");
+
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
+        return jwtAuthenticationConverter;
+    }
+
 
     @Bean
     public KeyPair keyPair(){
