@@ -5,12 +5,12 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class LoginRequest {
+public class JwtRequest {
     private String email;
     private String password;
     private String username;
 
-    public LoginRequest(String email, String password) {
+    public JwtRequest(String email, String password) {
         this.email = email;
         this.password = password;
     }

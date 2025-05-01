@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class UserPrinciple implements UserDetails {
@@ -23,6 +24,10 @@ public class UserPrinciple implements UserDetails {
         return user.getRoles().stream()
                 .map(roles -> new SimpleGrantedAuthority("ROLE_" + roles.name()))
                 .collect(Collectors.toSet());
+    }
+
+    public UUID getUUID(){
+        return user.getUuid();
     }
 
     @Override

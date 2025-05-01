@@ -3,7 +3,7 @@ package com.mdev.chatcord.server.dto;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
-public class LoginResponse {
+public class JwtResponse {
     private String token;
     public String getToken() { return token; }
 }

@@ -1,7 +1,8 @@
 package com.mdev.chatcord.server.controller;
 
-import com.mdev.chatcord.server.dto.LoginRequest;
-import com.mdev.chatcord.server.dto.LoginResponse;
+import com.mdev.chatcord.server.configuration.UserPrinciple;
+import com.mdev.chatcord.server.dto.JwtRequest;
+import com.mdev.chatcord.server.dto.JwtResponse;
 import com.mdev.chatcord.server.model.*;
 import com.mdev.chatcord.server.repository.UserRepository;
 import com.mdev.chatcord.server.service.EmailService;
@@ -19,11 +20,14 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -40,19 +44,21 @@ public class UserController {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@RequestBody JwtRequest jwtRequest) {
         try {
-            User user = userRepository.findByEmail(loginRequest.getEmail());
-            var auth = new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword(), mapRolesToAuthorities(user));
+            User user = userRepository.findByEmail(jwtRequest.getEmail());
+            var auth = new UsernamePasswordAuthenticationToken(jwtRequest.getEmail(), jwtRequest.getPassword(), mapRolesToAuthorities(user));
+
+            SecurityContextHolder.getContext().setAuthentication(auth);
 
             authenticationManager.authenticate(auth);
 
-            var token = jwtService.generateToken(auth);
+            var token = jwtService.generateToken(auth, user);
 
-            logger.info("User with this Email Address: [{}] Logged In Successfully.", auth.getName());
+            logger.info("User with this Email Address: [{}] Logged In Successfully. His UUID is: ", auth.getName());
             logger.info("User with this Email Address: [{}] Has these Authorities.", auth.getAuthorities());
 
-            return ResponseEntity.ok(new LoginResponse(token));
+            return ResponseEntity.ok(new JwtResponse(token));
 
         } catch (UsernameNotFoundException usernameNotFoundException){
             return ResponseEntity.badRequest().body("This Email Address is not registered.");
@@ -61,7 +67,9 @@ public class UserController {
         } catch (LockedException accountLockedException){
             return ResponseEntity.status(HttpStatus.LOCKED).body("Please verify your Email Address first before logging in.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Something Went Wrong.");
+            return ResponseEntity.badRequest()
+                    .header("Problem: ", "Something Went Wrong.")
+                    .body(e.getMessage());
         }
 
     }
@@ -73,21 +81,19 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody LoginRequest loginRequest){
-        if (userRepository.existsByEmail(loginRequest.getEmail()))
-            return ResponseEntity.badRequest().body("Email Already Registered.");
+    public ResponseEntity<?> register(@RequestBody JwtRequest jwtRequest){
+        if (userRepository.existsByEmail(jwtRequest.getEmail()))
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email Already Registered.");
 
-        String tag = jwtService.generateTag(userRepository);
-        User user = new User(loginRequest.getEmail(), loginRequest.getPassword(), loginRequest.getUsername());
+        User user = new User(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getUsername());
         user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
         user.getRoles().add(ERoles.USER);
-        user.setTag(tag);
 
-        String otp = otpService.generateOtp(loginRequest.getEmail());
+        String otp = otpService.generateOtp(jwtRequest.getEmail());
 
         try{
-            emailService.sendOtpEmail(loginRequest.getEmail(), otp);
-            logger.info("OTP {} email sent to {}", otp, loginRequest.getEmail());
+            emailService.sendOtpEmail(jwtRequest.getEmail(), otp);
+            logger.info("OTP {} email sent to {}", otp, jwtRequest.getEmail());
 
         } catch (Exception e){
             throw new RuntimeException(e);
@@ -117,15 +123,13 @@ public class UserController {
 
     @PostMapping("/admin/register")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> registerAdmin(@RequestBody LoginRequest loginRequest){
-        if (userRepository.existsByEmail(loginRequest.getEmail()))
+    public ResponseEntity<?> registerAdmin(@RequestBody JwtRequest jwtRequest){
+        if (userRepository.existsByEmail(jwtRequest.getEmail()))
             return ResponseEntity.badRequest().body("Email Already Registered.");
 
-        String tag = jwtService.generateTag(userRepository);
-        User user = new User(loginRequest.getEmail(), loginRequest.getPassword(), loginRequest.getUsername());
+        User user = new User(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getUsername());
         user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
         user.getRoles().add(ERoles.ADMIN);
-        user.setTag(tag);
         userRepository.save(user);
 
         return ResponseEntity.ok("Admin Registered Successfully");
@@ -134,6 +138,8 @@ public class UserController {
     @PostMapping("/authenticate")
     public Authentication authenticate(Authentication authentication){
         logger.info("These are the ROLES that {{}} has: [{}].", authentication.getName(), authentication.getAuthorities());
+
+        logger.info("The UUID for this Account is: {}", userRepository.findByUuid(UUID.fromString(jwtService.getUUIDFromJwt(authentication))).getUsername());
         return authentication;
     }
 

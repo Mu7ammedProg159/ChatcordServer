@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.model;
 
+import com.mdev.chatcord.server.service.JwtService;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -16,12 +17,19 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(nullable = false)
-    private Long uid;
+    private Long id;
+
+    @Column(unique = true, nullable = false, updatable = false)
+    private UUID uuid = UUID.randomUUID();
+
+    private String email;
+    private String Password;
 
     private String username;
-    private String tag;
-    private String Password;
-    private String email;
+
+    @Column(unique = true, nullable = false)
+    private String tag = generateTag();
+
 
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
@@ -39,15 +47,21 @@ public class User {
     private EStatus status = EStatus.OFFLINE;
     private String userSocket;
 
-
     public User(String email, String password, String username) {
         this.email = email;
         Password = password;
         this.username = username;
     }
+
     public boolean isAccountNonLocked() {
         isAccountNonLocked = emailVerified;
         return isAccountNonLocked;
+    }
+
+    public String generateTag(){
+        Random random = new Random();
+        int id = random.nextInt(9000) + 1000;
+        return String.valueOf(id);
     }
 }
 
