@@ -1,0 +1,430 @@
+{
+  "version": 6,
+  "entities": [
+    {
+      "entity": {
+        "type": "Project",
+        "id": "8489f970-af3a-494d-8b3d-c105fecc69b5",
+        "name": "Chatcord Server"
+      },
+      "children": [
+        {
+          "entity": {
+            "type": "Request",
+            "method": {
+              "requestBody": true,
+              "link": "http://tools.ietf.org/html/rfc7231#section-4.3.3",
+              "name": "POST"
+            },
+            "body": {
+              "formBody": {
+                "overrideContentType": true,
+                "encoding": "application/x-www-form-urlencoded",
+                "items": []
+              },
+              "bodyType": "Text",
+              "textBody": ""
+            },
+            "uri": {
+              "query": {
+                "delimiter": "&",
+                "items": []
+              },
+              "scheme": {
+                "name": "http",
+                "version": "V11"
+              },
+              "host": "localhost:8080",
+              "path": "/api/auth/authenticate"
+            },
+            "id": "2b0f5726-60d9-4048-b851-00d92f17b6b2",
+            "name": "Authenticate",
+            "headers": [
+              {
+                "enabled": true,
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "enabled": true,
+                "name": "Authorization",
+                "value": "Bearer eyJraWQiOiIwNzUwMWY3Ny01OWU0LTQ5MzAtOGRiOS0yODVjM2MxZjk4NDEiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJuaW5qYWJhdHRvc2FpQGdtYWlsLmNvbSIsInNjb3BlIjoiVVNFUiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsImV4cCI6MTc0NjA5NTQ2MSwiaWF0IjoxNzQ2MDkzNjYxLCJ1dWlkIjoiMDUzYmIyZmItMzY0YS00OWRkLTg1MDktZWIzZjRlYjA1YTA4In0.0Gq7TOHyRZr6xsarWGwWR2ExmDAw0dLRoLwqR9EiFdcShusUTNDKpDarvlq4VuHcXLfeZ4MY02k4-8mew6xWBk1mWkVx3bFTkpcr83nzxEygNE6tDxR_HzRc7FcYCpg5GWpSMEewERN6ovFVCtAXLwd6HvUkNMoyww6DqyXfKkD9_GSYmRzrnEkWECyPNwfNeg9tN7KjIwOBUVeEmQ5BXJkatUSV2tYrZeG8d9I2wJA4Ht5Ba7R8OrkthIEcBLbM-lzNDAxL7d3hNvDnCgVnjTQQMeW1lqQTVn0JcxyfBWZhPwO3BJU7pKjYguCri2jOgTUOMS6SkcTnu_gtkhbLNg"
+              }
+            ]
+          }
+        },
+        {
+          "entity": {
+            "type": "Request",
+            "method": {
+              "link": "http://tools.ietf.org/html/rfc7231#section-4.3.1",
+              "name": "GET"
+            },
+            "body": {
+              "formBody": {
+                "overrideContentType": true,
+                "encoding": "multipart/form-data",
+                "items": [
+                  {
+                    "enabled": true,
+                    "type": "File",
+                    "name": "file"
+                  }
+                ]
+              },
+              "bodyType": "Form"
+            },
+            "uri": {
+              "query": {
+                "delimiter": "&",
+                "items": []
+              },
+              "scheme": {
+                "name": "http",
+                "version": "V11"
+              },
+              "host": "localhost:8080",
+              "path": "/api/users/053bb2fb-364a-49dd-8509-eb3f4eb0bnm5a08/files/download/pfp.png"
+            },
+            "id": "edf4d186-877b-4322-b5ec-9eb6d8b5e3d3",
+            "name": "Download File from Spring Local Storage",
+            "headers": [
+              {
+                "enabled": true,
+                "name": "Authorization",
+                "value": "Bearer eyJraWQiOiJmNmE3MzY0Ni1iMGYzLTQyNjYtYmE1NC0zNTdhNDAyOTU2ODIiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJuaW5qYWJhdHRvc2FpQGdtYWlsLmNvbSIsInNjb3BlIjoiVVNFUiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsImV4cCI6MTc0NjA5ODM1MywiaWF0IjoxNzQ2MDk2NTUzLCJ1dWlkIjoiMDUzYmIyZmItMzY0YS00OWRkLTg1MDktZWIzZjRlYjA1YTA4In0.ZZyXdv56tEYxOdwStrPjOs1siUkGJj_ot8xwwWpKUtzt-ZQa728wM2jRpANu3v7jEyv4PYkcNXAFAiIAk1eUrU3b0RbnAih48kspU8sFu2hk7gtrtV5rxaNdWzuIT0AbdKyH4IokT57PuzCy-M34Vywn5C072H6shoDG0ljX91YXN4HsUwa9to34JNhY3ERf2BijGeVpsdt0ELMNbjpF3DeaVdTKOGSV6FVKiEtgao1PdIToCC5ucu5lE_bmgj04sR6hmYKWlQnGc0KrDDrew9ovyCwi_ia6WumE3Wob-EipX7V-aOGzX8x7-WKQn5tr8eKr97fq1SatK6e2k73zzw"
+              }
+            ]
+          }
+        },
+        {
+          "entity": {
+            "type": "Request",
+            "method": {
+              "requestBody": true,
+              "link": "http://tools.ietf.org/html/rfc7231#section-4.3.3",
+              "name": "POST"
+            },
+            "body": {
+              "formBody": {
+                "overrideContentType": true,
+                "encoding": "application/x-www-form-urlencoded",
+                "items": []
+              },
+              "bodyType": "Text",
+              "textBody": "{\n  \"email\": \"ninja.dark159@gmail.com\",\n  \"password\": \"123\"\n}"
+            },
+            "uri": {
+              "query": {
+                "delimiter": "&",
+                "items": []
+              },
+              "scheme": {
+                "name": "http",
+                "version": "V11"
+              },
+              "host": "localhost:8080",
+              "path": "/api/auth/login"
+            },
+            "id": "5768b415-7489-4720-aba6-36f3bcbe9ae4",
+            "name": "Login",
+            "headers": [
+              {
+                "enabled": true,
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "entity": {
+            "type": "Request",
+            "method": {
+              "requestBody": true,
+              "link": "http://tools.ietf.org/html/rfc7231#section-4.3.3",
+              "name": "POST"
+            },
+            "body": {
+              "formBody": {
+                "overrideContentType": true,
+                "encoding": "application/x-www-form-urlencoded",
+                "items": []
+              },
+              "bodyType": "Text",
+              "textBody": "{\n  \"UUID\": \"cbd256d1-1b22-4663-903e-e402628ab885\"\n  \"email\": \"admin@gmail.com\",\n  \"password\": \"admin\",\n}"
+            },
+            "uri": {
+              "query": {
+                "delimiter": "&",
+                "items": []
+              },
+              "scheme": {
+                "name": "http",
+                "version": "V11"
+              },
+              "host": "localhost:8080",
+              "path": "/api/auth/admin/register"
+            },
+            "id": "b969b0b8-0f04-46ed-8105-d8d74fbbdb54",
+            "name": "Register Admin",
+            "headers": [
+              {
+                "enabled": true,
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "entity": {
+            "type": "Request",
+            "method": {
+              "requestBody": true,
+              "link": "http://tools.ietf.org/html/rfc7231#section-4.3.3",
+              "name": "POST"
+            },
+            "body": {
+              "formBody": {
+                "overrideContentType": true,
+                "encoding": "application/x-www-form-urlencoded",
+                "items": []
+              },
+              "bodyType": "Text",
+              "textBody": "{\n  \"email\": \"ninja.dark159@gmail.com\",\n  \"password\": \"123\",\n  \"username\": \"NinjaDark159\"\n}"
+            },
+            "uri": {
+              "query": {
+                "delimiter": "&",
+                "items": []
+              },
+              "scheme": {
+                "name": "http",
+                "version": "V11"
+              },
+              "host": "localhost:8080",
+              "path": "/api/auth/register"
+            },
+            "id": "ad8e0355-7227-4fdf-b997-a115455dfe8f",
+            "name": "Register User",
+            "headers": [
+              {
+                "enabled": true,
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "entity": {
+            "type": "Request",
+            "method": {
+              "requestBody": true,
+              "link": "http://tools.ietf.org/html/rfc7231#section-4.3.3",
+              "name": "POST"
+            },
+            "body": {
+              "formBody": {
+                "overrideContentType": true,
+                "encoding": "application/x-www-form-urlencoded",
+                "items": []
+              },
+              "bodyType": "Text",
+              "textBody": "{\n  \"email\": \"ninja.dark159@gmail.com\"\n}"
+            },
+            "uri": {
+              "query": {
+                "delimiter": "&",
+                "items": []
+              },
+              "scheme": {
+                "name": "http",
+                "version": "V11"
+              },
+              "host": "localhost:8080",
+              "path": "/api/auth/resend-otp"
+            },
+            "id": "72383111-ac83-4453-b415-ac6b3cefeb79",
+            "name": "Resend OTP",
+            "headers": [
+              {
+                "enabled": true,
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "entity": {
+            "type": "Request",
+            "method": {
+              "link": "http://tools.ietf.org/html/rfc7231#section-4.3.1",
+              "name": "GET"
+            },
+            "body": {
+              "formBody": {
+                "overrideContentType": true,
+                "encoding": "application/x-www-form-urlencoded",
+                "items": []
+              },
+              "bodyType": "Text"
+            },
+            "uri": {
+              "query": {
+                "delimiter": "&",
+                "items": []
+              },
+              "scheme": {
+                "name": "http",
+                "version": "V11"
+              },
+              "host": "localhost:8080",
+              "path": "/api/auth/users/053bb2fb-364a-49dd-8509-eb3f4eb05a08"
+            },
+            "id": "1afd5c9a-3c07-492c-842e-79945a4442ed",
+            "name": "Retrieve User Profile",
+            "headers": [
+              {
+                "enabled": true,
+                "name": "Authorization",
+                "value": "Bearer eyJraWQiOiJiYWRhNGQzYS02NjFiLTQ3MWUtODljNS1mNjRmZTAyNmRiNTciLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJuaW5qYWJhdHRvc2FpQGdtYWlsLmNvbSIsInNjb3BlIjoiVVNFUiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsImV4cCI6MTc0NjEwODk0MSwiaWF0IjoxNzQ2MTA3MTQxLCJ1dWlkIjoiMDUzYmIyZmItMzY0YS00OWRkLTg1MDktZWIzZjRlYjA1YTA4In0.RdkfnF_CqBvMTv89UMlk2qhSEZku5kXt2ZgwYIptXuEdKiOT-mSo4pyRKXK9SaRXpY4r-IMeT922v97NBnkqhU87mMknhf-KX-kS6GR0taZZyiS1ZdGVpmeGgCuueNDfc7kp1uJjMZ8kjypeTCWH7vvsSoCSdis41e_N6IPpHyrwBUYOuTL5smLcDEXZWtuujBIA1XlSXZcJUZuMJX819ViQ0zpVGY1kPrb-bbXVssAOSFjNXfkwsta-Y56iGZ8_gDDFcgSBK3jwlxLJd5NonfFV9ciGIuyn786y9mVDb1lOOW6UPeJf1KdxtlBc2N9TFwzN3WyBiKGJs5SNokfuNQ"
+              }
+            ]
+          }
+        },
+        {
+          "entity": {
+            "type": "Request",
+            "method": {
+              "link": "http://tools.ietf.org/html/rfc7231#section-4.3.1",
+              "name": "GET"
+            },
+            "body": {
+              "formBody": {
+                "overrideContentType": true,
+                "encoding": "application/x-www-form-urlencoded",
+                "items": []
+              },
+              "bodyType": "Text",
+              "textBody": "{\n  \"email\": \"muhammed@gmail.com\",\n  \"password\": \"123\"\n}"
+            },
+            "uri": {
+              "query": {
+                "delimiter": "&",
+                "items": []
+              },
+              "scheme": {
+                "name": "http",
+                "version": "V11"
+              },
+              "host": "localhost:8080",
+              "path": "/hello"
+            },
+            "id": "d7ca43ba-e2e6-4a4f-95af-92f9ebab151b",
+            "name": "TestController",
+            "headers": [
+              {
+                "enabled": true,
+                "name": "Authorization",
+                "value": "Bearer eyJraWQiOiIwZDFmNzMzYS0yZGNkLTRhMTMtYjI0MS1jZGY3ZTk0ZDU0ZmQiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJuaW5qYWJhdHRvc2FpQGdtYWlsLmNvbSIsInNjb3BlIjoiVVNFUiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsImV4cCI6MTc0NjA5NzM3MSwiaWF0IjoxNzQ2MDk1NTcxLCJ1dWlkIjoiMDUzYmIyZmItMzY0YS00OWRkLTg1MDktZWIzZjRlYjA1YTA4In0.MAxiI9-JH0L0fM1_I1j5tgW1kOAxTWejlpQvhlK2YVMKXrnfCnVtlB9SlfgooOQ2-RNEFcRPZXLQuDeEBUVB9wZhCwFKzdXNUfivcQCbohBy27gPJ-jfrK3OnDKbAmrzSqVrSXm_7a7P1J-_XySDLRrI1sKm4HCu0b6Gu_RK67W0PvOZrl4Kx5x06fOELQCCKY7qoAaC36kK5o_OpR1GlXeczyotA4MnlEGC1YDs0UolWuhENHJ04I5CM2O3-TY_Ls2WEw5uzvbDQ6slUPtnpo751zzl-_yx5spl10BCb2isSsed07kuUrt7B1hY2ftnvR8um7W-gv9YPY6NeD3lfg"
+              }
+            ]
+          }
+        },
+        {
+          "entity": {
+            "type": "Request",
+            "method": {
+              "requestBody": true,
+              "link": "http://tools.ietf.org/html/rfc7231#section-4.3.3",
+              "name": "POST"
+            },
+            "body": {
+              "formBody": {
+                "overrideContentType": true,
+                "encoding": "multipart/form-data",
+                "items": [
+                  {
+                    "enabled": true,
+                    "type": "File",
+                    "name": "file"
+                  }
+                ]
+              },
+              "bodyType": "Form"
+            },
+            "uri": {
+              "query": {
+                "delimiter": "&",
+                "items": []
+              },
+              "scheme": {
+                "name": "http",
+                "version": "V11"
+              },
+              "host": "localhost:8080",
+              "path": "/api/users/053bb2fb-364a-49dd-8509-eb3f4eb05a08/files/upload"
+            },
+            "id": "75b8e29b-9f1d-4a75-a9ba-9cc19a167598",
+            "name": "Upload File to Spring Local Storage",
+            "headers": [
+              {
+                "enabled": true,
+                "name": "Authorization",
+                "value": "Bearer eyJraWQiOiJmNmE3MzY0Ni1iMGYzLTQyNjYtYmE1NC0zNTdhNDAyOTU2ODIiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJuaW5qYWJhdHRvc2FpQGdtYWlsLmNvbSIsInNjb3BlIjoiVVNFUiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsImV4cCI6MTc0NjA5ODM1MywiaWF0IjoxNzQ2MDk2NTUzLCJ1dWlkIjoiMDUzYmIyZmItMzY0YS00OWRkLTg1MDktZWIzZjRlYjA1YTA4In0.ZZyXdv56tEYxOdwStrPjOs1siUkGJj_ot8xwwWpKUtzt-ZQa728wM2jRpANu3v7jEyv4PYkcNXAFAiIAk1eUrU3b0RbnAih48kspU8sFu2hk7gtrtV5rxaNdWzuIT0AbdKyH4IokT57PuzCy-M34Vywn5C072H6shoDG0ljX91YXN4HsUwa9to34JNhY3ERf2BijGeVpsdt0ELMNbjpF3DeaVdTKOGSV6FVKiEtgao1PdIToCC5ucu5lE_bmgj04sR6hmYKWlQnGc0KrDDrew9ovyCwi_ia6WumE3Wob-EipX7V-aOGzX8x7-WKQn5tr8eKr97fq1SatK6e2k73zzw"
+              },
+              {
+                "enabled": true,
+                "name": "Content-Type",
+                "value": "multipart/form-data"
+              }
+            ]
+          }
+        },
+        {
+          "entity": {
+            "type": "Request",
+            "method": {
+              "requestBody": true,
+              "link": "http://tools.ietf.org/html/rfc7231#section-4.3.3",
+              "name": "POST"
+            },
+            "body": {
+              "formBody": {
+                "overrideContentType": true,
+                "encoding": "application/x-www-form-urlencoded",
+                "items": []
+              },
+              "bodyType": "Text",
+              "textBody": "{\n  \"email\": \"ninjabattosai@gmail.com\",\n  \"otp\": \"150590\"\n}\n"
+            },
+            "uri": {
+              "query": {
+                "delimiter": "&",
+                "items": []
+              },
+              "scheme": {
+                "name": "http",
+                "version": "V11"
+              },
+              "host": "localhost:8080",
+              "path": "/api/auth/verify-email"
+            },
+            "id": "790bf1fb-4397-44e0-82d1-c2649b8cda75",
+            "name": "Verify Email Using OTP",
+            "headers": [
+              {
+                "enabled": true,
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

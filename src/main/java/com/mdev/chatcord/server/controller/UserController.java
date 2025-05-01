@@ -3,6 +3,7 @@ package com.mdev.chatcord.server.controller;
 import com.mdev.chatcord.server.configuration.UserPrinciple;
 import com.mdev.chatcord.server.dto.JwtRequest;
 import com.mdev.chatcord.server.dto.JwtResponse;
+import com.mdev.chatcord.server.dto.ProfileDTO;
 import com.mdev.chatcord.server.model.*;
 import com.mdev.chatcord.server.repository.UserRepository;
 import com.mdev.chatcord.server.service.EmailService;
@@ -14,11 +15,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.LockedException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -141,6 +140,17 @@ public class UserController {
 
         logger.info("The UUID for this Account is: {}", userRepository.findByUuid(UUID.fromString(jwtService.getUUIDFromJwt(authentication))).getUsername());
         return authentication;
+    }
+
+    @GetMapping("/users/{uuid}")
+    public ResponseEntity<ProfileDTO> getCurrentUserDto(@PathVariable String uuid, @AuthenticationPrincipal Jwt jwt){
+        User user = userRepository.findByUuid(UUID.fromString(uuid));
+
+        ProfileDTO profileDTO = new ProfileDTO(user.getEmail(), user.getUsername(), user.getTag(),
+                user.getStatus().name(), user.getUserSocket(), user.isEmailVerified()
+        );
+
+        return ResponseEntity.ok(profileDTO);
     }
 
     @DeleteMapping("/delete/user")

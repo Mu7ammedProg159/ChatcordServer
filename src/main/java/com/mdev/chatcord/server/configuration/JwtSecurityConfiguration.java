@@ -60,6 +60,7 @@ public class JwtSecurityConfiguration {
         http
             .authorizeHttpRequests(authorize -> authorize
                     .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/auth/users/**").authenticated()
                     .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
