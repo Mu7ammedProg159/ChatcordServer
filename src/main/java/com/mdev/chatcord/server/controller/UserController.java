@@ -10,10 +10,13 @@ import com.mdev.chatcord.server.service.EmailService;
 import com.mdev.chatcord.server.service.JwtService;
 import com.mdev.chatcord.server.service.OtpService;
 import lombok.RequiredArgsConstructor;
+import org.eclipse.angus.mail.smtp.SMTPAddressFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailSendException;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
@@ -23,7 +26,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Set;
 import java.util.UUID;
@@ -43,7 +48,7 @@ public class UserController {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody JwtRequest jwtRequest) {
+    public ResponseEntity<String> login(@RequestBody JwtRequest jwtRequest) {
         try {
             User user = userRepository.findByEmail(jwtRequest.getEmail());
             var auth = new UsernamePasswordAuthenticationToken(jwtRequest.getEmail(), jwtRequest.getPassword(), mapRolesToAuthorities(user));
@@ -52,25 +57,20 @@ public class UserController {
 
             authenticationManager.authenticate(auth);
 
-            var token = jwtService.generateToken(auth, user);
+            String token = jwtService.generateToken(auth, user);
 
             logger.info("User with this Email Address: [{}] Logged In Successfully. His UUID is: ", auth.getName());
             logger.info("User with this Email Address: [{}] Has these Authorities.", auth.getAuthorities());
 
-            return ResponseEntity.ok(new JwtResponse(token));
+            return ResponseEntity.ok(token);
 
         } catch (UsernameNotFoundException usernameNotFoundException){
-            return ResponseEntity.badRequest().body("This Email Address is not registered.");
-        } catch (BadCredentialsException e){
-            return ResponseEntity.badRequest().body("Email Address or Password are incorrect.");
+            return ResponseEntity.badRequest().body("This Email Address is not registered");
+        } catch (BadCredentialsException | NullPointerException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email or password is invalid.");
         } catch (LockedException accountLockedException){
-            return ResponseEntity.status(HttpStatus.LOCKED).body("Please verify your Email Address first before logging in.");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .header("Problem: ", "Something Went Wrong.")
-                    .body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.LOCKED).body("Please verify your Email Address first before logging in");
         }
-
     }
 
     private static Set<SimpleGrantedAuthority> mapRolesToAuthorities(User user) {
@@ -79,6 +79,7 @@ public class UserController {
                 .collect(Collectors.toSet());
     }
 
+    @Transactional(rollbackFor = MailSendException.class)
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody JwtRequest jwtRequest){
         if (userRepository.existsByEmail(jwtRequest.getEmail()))
@@ -88,17 +89,17 @@ public class UserController {
         user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
         user.getRoles().add(ERoles.USER);
 
-        String otp = otpService.generateOtp(jwtRequest.getEmail());
-
         try{
+            String otp = otpService.generateOtp(jwtRequest.getEmail());
+
             emailService.sendOtpEmail(jwtRequest.getEmail(), otp);
             logger.info("OTP {} email sent to {}", otp, jwtRequest.getEmail());
 
-        } catch (Exception e){
-            throw new RuntimeException(e);
+            userRepository.save(user);
+        } catch (MailSendException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage() + " --- " + e.getCause());
         }
 
-        userRepository.save(user);
         return ResponseEntity.ok("User Registered Successfully, " +
                 "Please Verify your Email Address to avoid losing your account.");
     }
@@ -142,9 +143,27 @@ public class UserController {
         return authentication;
     }
 
-    @GetMapping("/users/{uuid}")
-    public ResponseEntity<ProfileDTO> getCurrentUserDto(@PathVariable String uuid, @AuthenticationPrincipal Jwt jwt){
+    @GetMapping("/admin/users/{uuid}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getCurrentUserDto(@PathVariable String uuid, @AuthenticationPrincipal Jwt jwt){
+
+        if (!uuid.equals(jwt.getClaimAsString("uuid"))) return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body("The UUID for the Authenticated Token does not match with the UUID provided.");
+
         User user = userRepository.findByUuid(UUID.fromString(uuid));
+
+        ProfileDTO profileDTO = new ProfileDTO(user.getEmail(), user.getUsername(), user.getTag(),
+                user.getStatus().name(), user.getUserSocket(), user.isEmailVerified()
+        );
+
+        return ResponseEntity.ok(profileDTO);
+
+    }
+
+    @GetMapping("/users/me")
+    public ResponseEntity<ProfileDTO> getUserProfile(Authentication authentication){
+
+        User user = userRepository.findByEmail(authentication.getName());
 
         ProfileDTO profileDTO = new ProfileDTO(user.getEmail(), user.getUsername(), user.getTag(),
                 user.getStatus().name(), user.getUserSocket(), user.isEmailVerified()

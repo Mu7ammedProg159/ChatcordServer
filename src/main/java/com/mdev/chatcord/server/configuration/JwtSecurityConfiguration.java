@@ -60,6 +60,7 @@ public class JwtSecurityConfiguration {
         http
             .authorizeHttpRequests(authorize -> authorize
                     .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/auth/admin").hasRole("ADMIN")
                     .requestMatchers("/api/auth/users/**").authenticated()
                     .anyRequest().authenticated()
             )
