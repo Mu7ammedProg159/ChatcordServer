@@ -19,7 +19,7 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom("dev.chatcord@gmail.com");
             message.setTo(toEmail);
-            message.setSubject("Chatcord Verification Code");
+            message.setSubject("Chatcord");
             message.setText("Your verification code is: " + otp);
             mailSender.send(message);
         } catch (MailSendException e){

@@ -9,6 +9,8 @@ import com.mdev.chatcord.server.repository.UserRepository;
 import com.mdev.chatcord.server.service.EmailService;
 import com.mdev.chatcord.server.service.JwtService;
 import com.mdev.chatcord.server.service.OtpService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.angus.mail.smtp.SMTPAddressFailedException;
 import org.slf4j.Logger;
@@ -27,6 +29,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -81,25 +84,23 @@ public class UserController {
 
     @Transactional(rollbackFor = MailSendException.class)
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody JwtRequest jwtRequest){
-        if (userRepository.existsByEmail(jwtRequest.getEmail()))
+    public ResponseEntity<?> register(@Valid @RequestBody JwtRequest jwtRequest){
+        @Email(message = "Email address does not exists.")
+        String email = jwtRequest.getEmail();
+
+        if (userRepository.existsByEmail(email))
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email Already Registered.");
 
-        User user = new User(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getUsername());
+        User user = new User(email, jwtRequest.getPassword(), jwtRequest.getUsername());
         user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
         user.getRoles().add(ERoles.USER);
 
-        try{
-            String otp = otpService.generateOtp(jwtRequest.getEmail());
+        String otp = otpService.generateOtp(email);
 
-            emailService.sendOtpEmail(jwtRequest.getEmail(), otp);
-            logger.info("OTP {} email sent to {}", otp, jwtRequest.getEmail());
+        emailService.sendOtpEmail(email, otp);
+        logger.info("OTP {} email sent to {}", otp, email);
 
-            userRepository.save(user);
-        } catch (MailSendException e){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage() + " --- " + e.getCause());
-        }
-
+        userRepository.save(user);
         return ResponseEntity.ok("User Registered Successfully, " +
                 "Please Verify your Email Address to avoid losing your account.");
     }
@@ -184,5 +185,5 @@ public class UserController {
         }
     }
 
-    public record EmailRequest(String email){}
+    public record EmailRequest(@Email(message = "Email address does not exists.") String email){}
 }
