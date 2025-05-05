@@ -1,8 +1,6 @@
 package com.mdev.chatcord.server.controller;
 
-import com.mdev.chatcord.server.configuration.UserPrinciple;
 import com.mdev.chatcord.server.dto.JwtRequest;
-import com.mdev.chatcord.server.dto.JwtResponse;
 import com.mdev.chatcord.server.dto.ProfileDTO;
 import com.mdev.chatcord.server.model.*;
 import com.mdev.chatcord.server.repository.UserRepository;
@@ -11,14 +9,13 @@ import com.mdev.chatcord.server.service.JwtService;
 import com.mdev.chatcord.server.service.OtpService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Null;
 import lombok.RequiredArgsConstructor;
-import org.eclipse.angus.mail.smtp.SMTPAddressFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailSendException;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
@@ -29,9 +26,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Set;
 import java.util.UUID;
@@ -51,29 +46,26 @@ public class UserController {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody JwtRequest jwtRequest) {
-        try {
-            User user = userRepository.findByEmail(jwtRequest.getEmail());
-            var auth = new UsernamePasswordAuthenticationToken(jwtRequest.getEmail(), jwtRequest.getPassword(), mapRolesToAuthorities(user));
+    public ResponseEntity<String> login(@Valid @RequestBody JwtRequest jwtRequest) {
 
-            SecurityContextHolder.getContext().setAuthentication(auth);
+        @Email(message = "Enter a valid email address.")
+        String email = jwtRequest.getEmail();
 
-            authenticationManager.authenticate(auth);
+        @Null(message = "Email or password is invalid.")
+        User user = userRepository.findByEmail(email);
 
-            String token = jwtService.generateToken(auth, user);
+        var auth = new UsernamePasswordAuthenticationToken(email, jwtRequest.getPassword(), mapRolesToAuthorities(user));
 
-            logger.info("User with this Email Address: [{}] Logged In Successfully. His UUID is: ", auth.getName());
-            logger.info("User with this Email Address: [{}] Has these Authorities.", auth.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-            return ResponseEntity.ok(token);
+        authenticationManager.authenticate(auth);
 
-        } catch (UsernameNotFoundException usernameNotFoundException){
-            return ResponseEntity.badRequest().body("This Email Address is not registered");
-        } catch (BadCredentialsException | NullPointerException e){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email or password is invalid.");
-        } catch (LockedException accountLockedException){
-            return ResponseEntity.status(HttpStatus.LOCKED).body("Please verify your Email Address first before logging in");
-        }
+        String token = jwtService.generateToken(auth, user);
+
+        logger.info("User with this Email Address: [{}] Logged In Successfully. His UUID is: ", auth.getName());
+        logger.info("User with this Email Address: [{}] Has these Authorities.", auth.getAuthorities());
+
+        return ResponseEntity.ok(token);
     }
 
     private static Set<SimpleGrantedAuthority> mapRolesToAuthorities(User user) {

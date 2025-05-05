@@ -7,12 +7,14 @@ import lombok.Setter;
 @Getter
 @Setter
 public class JwtRequest {
+
     @Email(message = "Email address does not exists.")
     private String email;
+
     private String password;
     private String username;
 
-    public JwtRequest(String email, String password) {
+    public JwtRequest(@Email(message = "Email address does not exists.") String email, String password) {
         this.email = email;
         this.password = password;
     }
