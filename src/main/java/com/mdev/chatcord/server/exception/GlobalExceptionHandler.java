@@ -15,16 +15,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<String> handleUsernameNotFound(NotFound ex) {
-        return ResponseEntity.badRequest().body("Email address is not registered.");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email address is not registered.");
     }
 
-    @ExceptionHandler({BadCredentialsException.class, NullPointerException.class})
+    @ExceptionHandler({BadCredentialsException.class})
     public ResponseEntity<String> handleBadCredentials(Exception ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email or password is invalid.");
     }
 
     @ExceptionHandler(LockedException.class)
     public ResponseEntity<String> handleLockedException(LockedException ex) {
-        return ResponseEntity.status(HttpStatus.LOCKED).body("Please verify your Email Address to login.");
+        return ResponseEntity.status(HttpStatus.LOCKED).body("Please verify your email address to login.");
     }
 }
