@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.exception;
 
+import jakarta.validation.constraints.Email;
 import org.hibernate.annotations.NotFound;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,12 +15,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<String> handleUsernameNotFound(NotFound ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email address is not registered.");
+    public ResponseEntity<String> handleUsernameNotFound(UsernameNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account with this email address is not registered.");
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<String> handleValidationException(MethodArgumentNotValidException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email address is not valid.");
     }
 
     @ExceptionHandler({BadCredentialsException.class})
-    public ResponseEntity<String> handleBadCredentials(Exception ex) {
+    public ResponseEntity<String> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email or password is invalid.");
     }
 

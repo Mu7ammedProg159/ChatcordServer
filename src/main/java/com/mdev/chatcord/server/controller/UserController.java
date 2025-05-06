@@ -48,6 +48,9 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<String> login(@Valid @RequestBody JwtRequest jwtRequest) {
 
+        if (!userRepository.existsByEmail(jwtRequest.getEmail()))
+            throw new UsernameNotFoundException("Account with this Email Address not found.");
+
         @Email(message = "Enter a valid email address.")
         String email = jwtRequest.getEmail();
 
@@ -77,7 +80,7 @@ public class UserController {
     @Transactional(rollbackFor = MailSendException.class)
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody JwtRequest jwtRequest){
-        @Email(message = "Email address does not exists.")
+        @Email
         String email = jwtRequest.getEmail();
 
         if (userRepository.existsByEmail(email))
@@ -101,8 +104,9 @@ public class UserController {
     public ResponseEntity<String> resendOtp(@RequestBody EmailRequest emailRequest){
         if (!userRepository.existsByEmail(emailRequest.email())) return ResponseEntity.badRequest().body("Email not Registered.");
 
-        if (!otpService.canResendOtp(emailRequest.email())) return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                .body("Please wait at least 1 minute before resending the OTP.");
+        long remnaining = otpService.canResendOtp(emailRequest.email());
+        if (remnaining > 0) return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body("Please wait at least " + remnaining + " seconds before resending the OTP.");
 
         if (userRepository.findByEmail(emailRequest.email()).isEmailVerified()) return ResponseEntity
                 .status(HttpStatus.TOO_MANY_REQUESTS).body("This Email Address is already verified.");
@@ -114,18 +118,16 @@ public class UserController {
 
     }
 
-    @PostMapping("/admin/register")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> registerAdmin(@RequestBody JwtRequest jwtRequest){
-        if (userRepository.existsByEmail(jwtRequest.getEmail()))
-            return ResponseEntity.badRequest().body("Email Already Registered.");
+    @PostMapping("/retry-otp-send")
+    public ResponseEntity<?> canRetrySend(@RequestBody EmailRequest emailRequest){
+        if (!userRepository.existsByEmail(emailRequest.email())) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email not Registered.");
 
-        User user = new User(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getUsername());
-        user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
-        user.getRoles().add(ERoles.ADMIN);
-        userRepository.save(user);
+        if (userRepository.findByEmail(emailRequest.email()).isEmailVerified()) return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS).body("This Email Address is already verified.");
 
-        return ResponseEntity.ok("Admin Registered Successfully");
+        long remaining = otpService.canResendOtp(emailRequest.email());
+
+        return ResponseEntity.ok(remaining);
     }
 
     @PostMapping("/authenticate")
@@ -134,23 +136,6 @@ public class UserController {
 
         logger.info("The UUID for this Account is: {}", userRepository.findByUuid(UUID.fromString(jwtService.getUUIDFromJwt(authentication))).getUsername());
         return authentication;
-    }
-
-    @GetMapping("/admin/users/{uuid}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getCurrentUserDto(@PathVariable String uuid, @AuthenticationPrincipal Jwt jwt){
-
-        if (!uuid.equals(jwt.getClaimAsString("uuid"))) return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body("The UUID for the Authenticated Token does not match with the UUID provided.");
-
-        User user = userRepository.findByUuid(UUID.fromString(uuid));
-
-        ProfileDTO profileDTO = new ProfileDTO(user.getEmail(), user.getUsername(), user.getTag(),
-                user.getStatus().name(), user.getUserSocket(), user.isEmailVerified()
-        );
-
-        return ResponseEntity.ok(profileDTO);
-
     }
 
     @GetMapping("/users/me")

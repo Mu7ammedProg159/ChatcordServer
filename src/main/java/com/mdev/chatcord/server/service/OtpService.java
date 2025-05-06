@@ -1,6 +1,5 @@
 package com.mdev.chatcord.server.service;
 
-import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -27,13 +26,15 @@ public class OtpService {
         return entry.otp.equals(submittedOtp);
     }
 
-    public boolean canResendOtp(String email){
+    public long canResendOtp(String email){
         OtpEntry otpEntry = otpStorage.get(email);
-        if (otpEntry == null) return true; // true means there are no any OTPs sent before.
+        if (otpEntry == null) return 0; // true means there are no any OTPs sent before.
 
         LocalDateTime now = LocalDateTime.now();
         Duration duration = Duration.between(otpEntry.lastSentAt(), now);
-        return duration.toSeconds() >= 60;
+        long remaining = 60 - duration.toSeconds();
+
+        return Math.max(remaining, 0);
 
     }
 
