@@ -138,6 +138,8 @@ public class UserController {
         return authentication;
     }
 
+
+
     @GetMapping("/users/me")
     public ResponseEntity<ProfileDTO> getUserProfile(Authentication authentication){
 
