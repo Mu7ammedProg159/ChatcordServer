@@ -59,9 +59,9 @@ public class JwtSecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
+                    .requestMatchers("/api/auth/users/**").authenticated()
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/api/auth/admin").hasRole("ADMIN")
-                    .requestMatchers("/api/auth/users/**").authenticated()
                     .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

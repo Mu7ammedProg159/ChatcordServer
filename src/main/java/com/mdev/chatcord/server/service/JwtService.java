@@ -47,7 +47,6 @@ public class JwtService {
 
     }
 
-
     public String generateToken(Authentication authentication, User user){
 
         var claims = JwtClaimsSet.builder()

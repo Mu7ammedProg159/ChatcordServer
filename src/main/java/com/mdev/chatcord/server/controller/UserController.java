@@ -2,6 +2,7 @@ package com.mdev.chatcord.server.controller;
 
 import com.mdev.chatcord.server.dto.JwtRequest;
 import com.mdev.chatcord.server.dto.ProfileDTO;
+import com.mdev.chatcord.server.dto.UserDTO;
 import com.mdev.chatcord.server.model.*;
 import com.mdev.chatcord.server.repository.UserRepository;
 import com.mdev.chatcord.server.service.EmailService;
@@ -64,6 +65,9 @@ public class UserController {
         authenticationManager.authenticate(auth);
 
         String token = jwtService.generateToken(auth, user);
+
+        user.setStatus(EStatus.ONLINE);
+        userRepository.save(user);
 
         logger.info("User with this Email Address: [{}] Logged In Successfully. His UUID is: ", auth.getName());
         logger.info("User with this Email Address: [{}] Has these Authorities.", auth.getAuthorities());
@@ -138,7 +142,17 @@ public class UserController {
         return authentication;
     }
 
+    @GetMapping("/users/{username}/{tag}")
+    public ResponseEntity<?> getFriend(@PathVariable String username, @PathVariable String tag){
 
+        User user = userRepository.findByUsernameAndTag(username, tag);
+        if (!userRepository.existsByUsernameAndTag(username, tag))
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account with username: " + username + " and tag: "
+                    + tag + " not exists.");
+
+        UserDTO userDTO = new UserDTO(user.getUsername(), user.getTag(), user.getStatus());
+        return ResponseEntity.ok(userDTO);
+    }
 
     @GetMapping("/users/me")
     public ResponseEntity<ProfileDTO> getUserProfile(Authentication authentication){
