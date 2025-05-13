@@ -1,13 +1,11 @@
 package com.mdev.chatcord.server.configuration;
 
-import com.mdev.chatcord.server.model.User;
-import org.springframework.context.annotation.Configuration;
+import com.mdev.chatcord.server.user.model.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
