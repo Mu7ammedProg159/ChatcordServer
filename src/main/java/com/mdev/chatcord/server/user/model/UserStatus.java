@@ -4,10 +4,12 @@ import com.mdev.chatcord.server.user.service.EUserState;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 public class UserStatus {
@@ -16,9 +18,14 @@ public class UserStatus {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private User user;
 
     @Enumerated(EnumType.STRING)
     private EUserState status;
+
+    public UserStatus(User user, EUserState status) {
+        this.user = user;
+        this.status = status;
+    }
 }

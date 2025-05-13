@@ -5,14 +5,16 @@ import com.mdev.chatcord.server.user.model.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+@Entity
 @AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
-@Entity
 public class Friend {
 
     @Id
@@ -30,4 +32,10 @@ public class Friend {
 
     private LocalDateTime addedAt;
 
+    public Friend(User owner, User friend, EFriendStatus friendStatus, LocalDateTime addedAt) {
+        this.owner = owner;
+        this.friend = friend;
+        this.friendStatus = friendStatus;
+        this.addedAt = addedAt;
+    }
 }

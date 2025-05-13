@@ -1,5 +1,8 @@
 package com.mdev.chatcord.server.user.controller;
 
+import com.mdev.chatcord.server.friend.dto.FriendDTO;
+import com.mdev.chatcord.server.friend.repository.FriendRepository;
+import com.mdev.chatcord.server.friend.service.EFriendStatus;
 import com.mdev.chatcord.server.user.dto.JwtRequest;
 import com.mdev.chatcord.server.user.dto.Profile;
 import com.mdev.chatcord.server.friend.model.Friend;
@@ -28,6 +31,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -43,6 +47,8 @@ public class UserController {
     private final UserStatusRepository userStatusRepository;
 
     private final AuthenticationManager authenticationManager;
+
+    private final UserService userService;
     private final JwtService jwtService;
     private final EmailService emailService;
     private final OtpService otpService;
@@ -93,16 +99,13 @@ public class UserController {
         if (userRepository.existsByEmail(email))
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email Already Registered.");
 
-        User user = new User(email, jwtRequest.getPassword(), jwtRequest.getUsername());
-        user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
-        user.getRoles().add(ERoles.USER);
-
         String otp = otpService.generateOtp(email);
 
         emailService.sendOtpEmail(email, otp);
         logger.info("OTP {} email sent to {}", otp, email);
 
-        userRepository.save(user);
+        userService.createUser(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getUsername());
+
         return ResponseEntity.ok("User Registered Successfully, " +
                 "Please Verify your Email Address to avoid losing your account.");
     }
@@ -145,21 +148,6 @@ public class UserController {
         return authentication;
     }
 
-    @GetMapping("/users/{username}/{tag}")
-    public ResponseEntity<?> getFriend(@PathVariable String username, @PathVariable String tag){
-
-        User user = userRepository.findByUsernameAndTag(username, tag);
-        if (!userRepository.existsByUsernameAndTag(username, tag))
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account with username: " + username + " and tag: "
-                    + tag + " not exists.");
-
-        Optional<UserProfile> userProfile = profileRepository.findByUserId(user.getId());
-        Optional<UserStatus> userStatus = userStatusRepository.findByUserId(user.getId());
-
-        Profile userDTO = new Profile(user.getEmail(), user.getUsername(), user.getTag(), userStatus.get().getStatus().name(), user.isEmailVerified());
-        return ResponseEntity.ok(userDTO);
-    }
-
     @GetMapping("/users/me")
     public ResponseEntity<Profile> getUserProfile(Authentication authentication){
 
@@ -170,7 +158,6 @@ public class UserController {
 
         Profile profileDTO = new Profile(user.getEmail(), user.getUsername(), user.getTag(),
                 userStatus.get().getStatus().name(), user.isEmailVerified());
-
 
         return ResponseEntity.ok(profileDTO);
     }

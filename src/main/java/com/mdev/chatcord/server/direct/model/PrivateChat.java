@@ -16,9 +16,9 @@ import java.util.random.RandomGenerator;
 
 @Entity
 @AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
-@NoArgsConstructor
 public class PrivateChat {
 
     @Id @GeneratedValue(strategy = GenerationType.SEQUENCE)
