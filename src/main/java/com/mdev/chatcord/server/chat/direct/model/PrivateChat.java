@@ -24,4 +24,6 @@ public class PrivateChat extends Chat {
     @ManyToOne
     private User receiver;
 
+    @
+
 }

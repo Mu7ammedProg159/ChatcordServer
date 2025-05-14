@@ -24,7 +24,7 @@ public class Guild extends Chat {
     @ManyToOne
     private User owner;
 
-    //You may add commanders etc for roles or maybe other implementations somewhere how-where else.
+    //You may add commanders etc. For roles or maybe other implementations somewhere how-where else.
 
     @ManyToMany
     private Set<User> members;
