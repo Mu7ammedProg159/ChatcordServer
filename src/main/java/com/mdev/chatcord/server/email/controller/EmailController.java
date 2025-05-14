@@ -1,7 +1,5 @@
 package com.mdev.chatcord.server.email.controller;
 
-import com.mdev.chatcord.server.chat.direct.model.PrivateChat;
-import com.mdev.chatcord.server.chat.direct.repository.PrivateChatRepository;
 import com.mdev.chatcord.server.email.dto.OtpRequest;
 import com.mdev.chatcord.server.user.model.User;
 import com.mdev.chatcord.server.user.repository.UserRepository;
@@ -23,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class EmailController {
 
     private final UserRepository userRepository;
-    private final PrivateChatRepository privateChatRepository;
     private final EmailService emailService;
     private final OtpService otpService;
 
@@ -36,8 +33,6 @@ public class EmailController {
 
             user.setEmailVerified(true);
             user.setAccountNonLocked(true);
-
-            PrivateChat privateChat;
 
             userRepository.save(user);
 

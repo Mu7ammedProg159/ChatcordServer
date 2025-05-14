@@ -1,6 +1,7 @@
 package com.mdev.chatcord.server.user.model;
 
 import com.mdev.chatcord.server.authentication.service.ERoles;
+import com.mdev.chatcord.server.communication.model.ChatMember;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,14 +30,16 @@ public class User {
     @Column(unique = true, nullable = false)
     private String tag = generateTag();
 
+    @OneToMany(mappedBy = "user")
+    private List<ChatMember> participation = new ArrayList<>(); // To whom chat you belong ?
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Enumerated(EnumType.STRING)
+    private Set<ERoles> roles = new HashSet<>(Set.of(ERoles.USER));
+
 
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
-
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_roles")
-    @Enumerated(EnumType.STRING)
-    private Set<ERoles> roles = new HashSet<>(Set.of(ERoles.USER));
 
     private boolean isAccountNonExpired = true;
     private boolean isAccountNonLocked = false;

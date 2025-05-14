@@ -20,13 +20,13 @@ public class Guild extends Chat {
 
     private String guildName;
     private String description;
+    private String guildPictureUrl;
 
     @ManyToOne
-    private User owner;
+    private User createdBy;
+
+    private boolean isPublic;
 
     //You may add commanders etc. For roles or maybe other implementations somewhere how-where else.
-
-    @ManyToMany
-    private Set<User> members;
 
 }

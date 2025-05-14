@@ -13,14 +13,14 @@ import java.util.Set;
 @NoArgsConstructor
 @Getter
 @Setter
-public class Role {
+public class ChatRole {
 
     @Id @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
-    private String name;
+    private String name; // Role name
 
     @ManyToMany
-    private Set<Privilege> privileges;
+    private Set<Privilege> privileges; // What you can do with this Role ?
 
 }

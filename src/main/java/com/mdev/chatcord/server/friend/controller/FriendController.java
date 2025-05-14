@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.friend.controller;
 
+import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
 import com.mdev.chatcord.server.friend.dto.FriendDTO;
 import com.mdev.chatcord.server.friend.service.FriendService;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +53,7 @@ public class FriendController {
     @GetMapping("/users/friend/all")
     public ResponseEntity<?> getAllFriends(@AuthenticationPrincipal Jwt jwt){
 
-        List<FriendDTO> friendDTOList = friendService.getAllFriends(jwt.getClaimAsString("uuid"));
+        List<FriendContactDTO> friendDTOList = friendService.getAllFriends(jwt.getClaimAsString("uuid"));
 
         return ResponseEntity.ok(friendDTOList);
     }

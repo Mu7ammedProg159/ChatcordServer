@@ -1,7 +1,5 @@
 package com.mdev.chatcord.server.friend.service;
 
-import com.mdev.chatcord.server.chat.direct.model.PrivateChat;
-import com.mdev.chatcord.server.chat.direct.repository.PrivateChatRepository;
 import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
 import com.mdev.chatcord.server.friend.dto.FriendDTO;
 import com.mdev.chatcord.server.friend.model.Friend;
@@ -35,7 +33,6 @@ public class FriendService {
     private final ProfileRepository profileRepository;
     private final UserStatusRepository userStatusRepository;
     private final FriendRepository friendRepository;
-    private final PrivateChatRepository privateChatRepository;
 
     public FriendDTO addFriend(@Valid @Email(message = EMAIL_NOT_EXISTS) String ownerEmail, String friendUsername,
                                String friendTag){
@@ -76,16 +73,18 @@ public class FriendService {
         }
     }
 
-    public List<FriendDTO> getAllFriends(String uuid, int page, int size){
+    public List<FriendContactDTO> getAllFriends(String uuid) {
         User owner = userRepository.findByUuid(UUID.fromString(uuid));
 
         // In-Future if database became bigger overtime, must use pagination (+300 Records).
         List<Friend> friends = friendRepository.findAllByOwnerId(owner.getId(), Pageable.unpaged()).getContent();
         List<FriendContactDTO> friendDTOList = new ArrayList<>();
-        for (Friend friend: friends){
+        for (Friend friend : friends) {
             UserProfile friendProfile = profileRepository.findByUserId(friend.getId()).get();
-            PrivateChat friendChat = pr
-            friendDTOList.add(new FriendContactDTO(friend.getFriend().getUsername(), friend.getFriend().getTag(), friendProfile.getProfilePictureUrl(), ))
+            //PrivateChat friendChat = pr
+            friendDTOList.add(new FriendContactDTO(friend.getFriend().getUsername(), friend.getFriend().getTag(),
+                    friendProfile.getProfilePictureUrl(), null, null));
         }
+        return friendDTOList;
     }
 }

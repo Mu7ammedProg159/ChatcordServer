@@ -23,16 +23,17 @@ public class Message {
     private Long id;
 
     @ManyToOne
-    private User sender;
-
-    private String message;
-
-    private LocalDateTime sentAt;
-    private LocalDateTime seenAt;
-
-    @Enumerated(EnumType.STRING)
-    private EMessageStatus messageState;
+    private User sender; // Who sent ?
 
     @ManyToOne
-    private Chat chat;
+    private Chat chat; // Where sent ?
+
+    private String message; // What you said ?
+
+    private LocalDateTime sentAt; // When Sent ?
+    private LocalDateTime seenAt; // When read ?
+
+    @Enumerated(EnumType.STRING)
+    private EMessageStatus messageState; // Reached or not ?
+
 }
