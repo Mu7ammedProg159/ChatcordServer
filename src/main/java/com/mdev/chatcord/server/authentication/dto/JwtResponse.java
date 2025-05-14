@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server.user.dto;
+package com.mdev.chatcord.server.authentication.dto;
 
 import lombok.AllArgsConstructor;
 

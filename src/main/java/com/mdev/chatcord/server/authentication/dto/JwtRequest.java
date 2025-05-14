@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server.user.dto;
+package com.mdev.chatcord.server.authentication.dto;
 
 import jakarta.validation.constraints.Email;
 import lombok.Getter;

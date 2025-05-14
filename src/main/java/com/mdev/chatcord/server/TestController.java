@@ -1,7 +1,7 @@
 package com.mdev.chatcord.server;
 
 import com.mdev.chatcord.server.user.repository.UserRepository;
-import com.mdev.chatcord.server.user.service.JwtService;
+import com.mdev.chatcord.server.authentication.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;

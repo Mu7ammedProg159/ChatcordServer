@@ -2,7 +2,7 @@ package com.mdev.chatcord.server.storage.controller;
 
 import com.mdev.chatcord.server.storage.service.FileStorageService;
 import com.mdev.chatcord.server.user.repository.UserRepository;
-import com.mdev.chatcord.server.user.service.JwtService;
+import com.mdev.chatcord.server.authentication.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;

@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server.user.service;
+package com.mdev.chatcord.server.authentication.service;
 
 public enum ERoles {
     ADMIN,

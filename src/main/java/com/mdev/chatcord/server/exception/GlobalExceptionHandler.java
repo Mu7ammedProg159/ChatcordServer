@@ -1,7 +1,5 @@
 package com.mdev.chatcord.server.exception;
 
-import jakarta.validation.constraints.Email;
-import org.hibernate.annotations.NotFound;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -32,5 +30,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(LockedException.class)
     public ResponseEntity<String> handleLockedException(LockedException ex) {
         return ResponseEntity.status(HttpStatus.LOCKED).body("Please verify your email address to login.");
+    }
+
+    @ExceptionHandler(AlreadyVerifiedException.class)
+    public ResponseEntity<String> handleAlreadyVerifiedException(AlreadyVerifiedException ex) {
+        return ResponseEntity.status(HttpStatus.ALREADY_REPORTED).body("The account is already verified.");
+    }
+
+    @ExceptionHandler(AlreadyRegisteredException.class)
+    public ResponseEntity<String> handleAlreadyRegisteredException(AlreadyRegisteredException ex) {
+        return ResponseEntity.status(HttpStatus.ALREADY_REPORTED).body("Account with this email address already registered.");
     }
 }

@@ -1,7 +1,6 @@
 package com.mdev.chatcord.server.user.model;
 
-import com.mdev.chatcord.server.user.service.ERoles;
-import com.mdev.chatcord.server.user.service.EUserState;
+import com.mdev.chatcord.server.authentication.service.ERoles;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -42,9 +41,6 @@ public class User {
     private boolean isAccountNonExpired = true;
     private boolean isAccountNonLocked = false;
     private boolean isActive = true;
-
-    @Enumerated(EnumType.STRING)
-    private EUserState status = EUserState.OFFLINE;
 
     public User(String email, String password, String username) {
         this.email = email;

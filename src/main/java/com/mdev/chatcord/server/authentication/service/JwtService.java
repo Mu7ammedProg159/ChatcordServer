@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server.user.service;
+package com.mdev.chatcord.server.authentication.service;
 
 import com.mdev.chatcord.server.user.model.User;
 import lombok.RequiredArgsConstructor;

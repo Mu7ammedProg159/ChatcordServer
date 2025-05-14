@@ -1,12 +1,12 @@
-package com.mdev.chatcord.server.user.controller;
+package com.mdev.chatcord.server.email.controller;
 
 import com.mdev.chatcord.server.direct.model.PrivateChat;
 import com.mdev.chatcord.server.direct.repository.PrivateChatRepository;
-import com.mdev.chatcord.server.user.dto.OtpRequest;
+import com.mdev.chatcord.server.email.dto.OtpRequest;
 import com.mdev.chatcord.server.user.model.User;
 import com.mdev.chatcord.server.user.repository.UserRepository;
-import com.mdev.chatcord.server.user.service.EmailService;
-import com.mdev.chatcord.server.user.service.OtpService;
+import com.mdev.chatcord.server.email.service.EmailService;
+import com.mdev.chatcord.server.email.service.OtpService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

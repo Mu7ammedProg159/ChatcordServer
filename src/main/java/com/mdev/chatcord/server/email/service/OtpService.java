@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server.user.service;
+package com.mdev.chatcord.server.email.service;
 
 import org.springframework.stereotype.Service;
 
@@ -35,7 +35,6 @@ public class OtpService {
         long remaining = 60 - duration.toSeconds();
 
         return Math.max(remaining, 0);
-
     }
 
     public record OtpEntry(String otp, Instant expiry, LocalDateTime lastSentAt){}
