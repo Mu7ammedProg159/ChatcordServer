@@ -1,12 +1,11 @@
 package com.mdev.chatcord.server.friend.service;
 
-import com.mdev.chatcord.server.direct.model.PrivateChat;
-import com.mdev.chatcord.server.direct.repository.PrivateChatRepository;
+import com.mdev.chatcord.server.chat.direct.model.PrivateChat;
+import com.mdev.chatcord.server.chat.direct.repository.PrivateChatRepository;
 import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
 import com.mdev.chatcord.server.friend.dto.FriendDTO;
 import com.mdev.chatcord.server.friend.model.Friend;
 import com.mdev.chatcord.server.friend.repository.FriendRepository;
-import com.mdev.chatcord.server.user.dto.Profile;
 import com.mdev.chatcord.server.user.model.User;
 import com.mdev.chatcord.server.user.model.UserProfile;
 import com.mdev.chatcord.server.user.model.UserStatus;
@@ -17,7 +16,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Null;
 import lombok.RequiredArgsConstructor;;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.config.annotation.AlreadyBuiltException;

@@ -1,7 +1,7 @@
 package com.mdev.chatcord.server.email.controller;
 
-import com.mdev.chatcord.server.direct.model.PrivateChat;
-import com.mdev.chatcord.server.direct.repository.PrivateChatRepository;
+import com.mdev.chatcord.server.chat.direct.model.PrivateChat;
+import com.mdev.chatcord.server.chat.direct.repository.PrivateChatRepository;
 import com.mdev.chatcord.server.email.dto.OtpRequest;
 import com.mdev.chatcord.server.user.model.User;
 import com.mdev.chatcord.server.user.repository.UserRepository;

@@ -1,5 +1,7 @@
 package com.mdev.chatcord.server.message.model;
 
+import com.mdev.chatcord.server.chat.Chat;
+import com.mdev.chatcord.server.message.service.EMessageStatus;
 import com.mdev.chatcord.server.user.model.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,5 +31,8 @@ public class Message {
     private LocalDateTime seenAt;
 
     @Enumerated(EnumType.STRING)
-    private EMessageState messageState;
+    private EMessageStatus messageState;
+
+    @ManyToOne
+    private Chat chat;
 }

@@ -1,5 +1,6 @@
-package com.mdev.chatcord.server.guild.model;
+package com.mdev.chatcord.server.chat.guild.model;
 
+import com.mdev.chatcord.server.chat.Chat;
 import com.mdev.chatcord.server.message.model.Message;
 import com.mdev.chatcord.server.user.model.User;
 import jakarta.persistence.*;
@@ -15,20 +16,17 @@ import java.util.Set;
 @NoArgsConstructor
 @Getter
 @Setter
-public class Guild {
-
-    @Id @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    private Long id;
+public class Guild extends Chat {
 
     private String guildName;
     private String description;
 
+    @ManyToOne
+    private User owner;
+
+    //You may add commanders etc for roles or maybe other implementations somewhere how-where else.
+
     @ManyToMany
     private Set<User> members;
-
-    @OneToMany
-    private Set<Message> messages;
-
-    private int CONNECTION_SOCKET;
 
 }
