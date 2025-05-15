@@ -41,4 +41,30 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleAlreadyRegisteredException(AlreadyRegisteredException ex) {
         return ResponseEntity.status(HttpStatus.ALREADY_REPORTED).body("Account with this email address already registered.");
     }
+
+    @ExceptionHandler(FriendshipNotFoundException.class)
+    public ResponseEntity<String> handleFriendshipNotFoundException(FriendshipNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Friend doesn't exists.");
+    }
+
+    @ExceptionHandler(FriendAlreadyAddedException.class)
+    public ResponseEntity<String> handleFriendAlreadyAddedException(FriendAlreadyAddedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(FriendNotFoundException.class)
+    public ResponseEntity<String> handleFriendNotFoundException(FriendNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("The friend you're trying to add does not exists.");
+    }
+
+    @ExceptionHandler(UUIDNotFoundException.class)
+    public ResponseEntity<String> handleUUIDNotFoundException(UUIDNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account with this UUID does not exists.");
+    }
+
+    @ExceptionHandler(CannotAddSelfException.class)
+    public ResponseEntity<String> handleCannotAddSelfException(CannotAddSelfException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("You can't add yourself as a friend.");
+    }
+
 }

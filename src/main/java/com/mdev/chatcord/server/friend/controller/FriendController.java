@@ -36,35 +36,16 @@ public class FriendController {
     @GetMapping("/add/{username}/{tag}")
     public ResponseEntity<?> addFriend(@AuthenticationPrincipal Jwt jwt, @PathVariable String username, @PathVariable String tag){
 
-        try {
-            FriendDTO friendDTO = friendService.addFriend(jwt.getClaimAsString("uuid"), username, tag);
-            return ResponseEntity.ok(friendDTO);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (LockedException e){
-            return ResponseEntity.status(HttpStatus.LOCKED).body(e.getMessage());
-        } catch (UsernameNotFoundException e){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (AlreadyRegisteredException e){
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(e.getMessage());
-        }
+        FriendDTO friendDTO = friendService.addFriend(jwt.getClaimAsString("uuid"), username, tag);
+        return ResponseEntity.ok(friendDTO);
     }
 
     @GetMapping("/{username}/{tag}")
     public ResponseEntity<?> requestFriend(@AuthenticationPrincipal Jwt jwt, @PathVariable String username, @PathVariable String tag){
 
-        try {
-            FriendContactDTO friendDTO = friendService.getFriend(jwt.getClaimAsString("uuid"), username, tag);
-            return ResponseEntity.ok(friendDTO);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (LockedException e){
-            return ResponseEntity.status(HttpStatus.LOCKED).body(e.getMessage());
-        } catch (UsernameNotFoundException e){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (AlreadyRegisteredException e){
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(e.getMessage());
-        }
+        FriendContactDTO friendDTO = friendService.getFriend(jwt.getClaimAsString("uuid"), username, tag);
+        return ResponseEntity.ok(friendDTO);
+
     }
 
 

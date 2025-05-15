@@ -18,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
 
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -69,7 +70,7 @@ public class UserService {
     public Profile getUserProfileByUUID(@Valid String uuid){
 
         @Null(message = "Account with this UUID does not exists.")
-        User user = userRepository.findByUuid(UUID.fromString(uuid));
+        User user = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new UsernameNotFoundException(""));
 
         @Null(message = "INTERNAL SERVER ERROR: There is no user status in this account.")
         Optional<UserProfile> userProfile = profileRepository.findByUserId(user.getId());

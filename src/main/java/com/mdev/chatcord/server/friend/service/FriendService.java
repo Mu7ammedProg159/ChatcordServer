@@ -1,6 +1,6 @@
 package com.mdev.chatcord.server.friend.service;
 
-import com.mdev.chatcord.server.exception.AlreadyRegisteredException;
+import com.mdev.chatcord.server.exception.*;
 import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
 import com.mdev.chatcord.server.friend.dto.FriendDTO;
 import com.mdev.chatcord.server.friend.model.Friend;
@@ -38,28 +38,25 @@ public class FriendService {
 
     public FriendDTO addFriend(@Valid String uuid, String friendUsername, String friendTag){
 
-        @Null(message = "UNAUTHORIZED: Something went wrong")
-        User owner = userRepository.findByUuid(UUID.fromString(uuid));
+        User owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new UsernameNotFoundException(""));
 
-        @Null(message = "A user with this name and tag does not exists.")
-        User friend = userRepository.findByUsernameAndTag(friendUsername, friendTag);
+        User friend = userRepository.findByUsernameAndTag(friendUsername, friendTag).orElseThrow(FriendNotFoundException::new);
 
         if (owner.getId().equals(friend.getId()))
-            throw new IllegalArgumentException("You cannot add yourself as a friend.");
+            throw new CannotAddSelfException("You cannot add yourself as a friend."); // Works fine.
 
         if (!owner.isAccountNonLocked())
-           throw new LockedException("Please verify your email address to use this feature.");
+           throw new LockedException("Please verify your email address to use this feature."); // Not now ..
 
-        if (!userRepository.existsByUsernameAndTag(friendUsername, friendTag))
-            throw new UsernameNotFoundException("Account with username: " + friendUsername + " and tag: "
-                    + friendTag + " not exists.");
+        if (!friendRepository.existsByOwnerIdAndFriendId(owner.getId(), friend.getId()))
+            throw new FriendshipNotFoundException("Account with username: " + friendUsername + " and tag: "
+                    + friendTag + " not exists."); //Check this
 
         Optional<UserProfile> userProfile = profileRepository.findByUserId(friend.getId());
         Optional<UserStatus> userStatus = userStatusRepository.findByUserId(friend.getId());
 
         if (friendRepository.existsByOwnerIdAndFriendId(owner.getId(), friend.getId())){
-            throw new AlreadyRegisteredException("You added " + friend.getUsername()
-                    + "#" + friend.getTag() + " already.");
+            throw new FriendAlreadyAddedException("You already added " + friendUsername + "#" + friendTag + " as a friend.");
         }
         else {
 
@@ -75,11 +72,12 @@ public class FriendService {
     }
 
     public List<FriendContactDTO> getAllFriends(String uuid) {
-        User owner = userRepository.findByUuid(UUID.fromString(uuid));
+        User owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new UsernameNotFoundException(""));
 
         // In-Future if database became bigger overtime, must use pagination (+300 Records).
         List<Friend> friendships = friendRepository.findAllByOwnerId(owner.getId(), Pageable.unpaged()).getContent();
         List<FriendContactDTO> friendDTOList = new ArrayList<>();
+
         for (Friend friend : friendships) {
             UserProfile friendProfile = profileRepository.findByUserId(friend.getFriend().getId()).orElseThrow(() -> new UsernameNotFoundException("User with ID " + friend.getId() + " not found"));;
             //PrivateChat friendChat = pr
@@ -90,10 +88,21 @@ public class FriendService {
     }
 
     public FriendContactDTO getFriend(String uuid, String username, String tag) {
-        User owner = userRepository.findByUuid(UUID.fromString(uuid));
+        User owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new UUIDNotFoundException(""));
 
         // In-Future if database became bigger overtime, must use pagination (+300 Records).
-        Friend friendship = friendRepository.findByFriendUsernameAndTag(owner.getId(), username, tag).orElseThrow(() -> new UsernameNotFoundException(""));
+        Friend friendship = friendRepository.findByFriendUsernameAndTag(owner.getId(), username, tag).orElseThrow(() -> new FriendNotFoundException(""));
+
+        if (owner.getId().equals(friendship.getFriend().getId()))
+            throw new IllegalArgumentException("You cannot add yourself as a friend."); // Works fine.
+
+        if (!owner.isAccountNonLocked())
+            throw new LockedException("Please verify your email address to use this feature."); // Not now ..
+
+        if (!friendRepository.existsByOwnerIdAndFriendId(owner.getId(), friendship.getFriend().getId()))
+            throw new FriendshipNotFoundException("Account with username: " + friendship.getFriend().getUsername() + " and tag: "
+                    + friendship.getFriend().getTag() + " not exists."); //Check this
+
         FriendContactDTO friendDTO;
 
         UserProfile friendProfile = profileRepository.findByUserId(friendship.getFriend().getId()).orElseThrow(() -> new UsernameNotFoundException(""));
