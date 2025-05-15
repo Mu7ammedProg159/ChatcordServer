@@ -14,7 +14,7 @@ import lombok.Setter;
 public class UserProfile {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)

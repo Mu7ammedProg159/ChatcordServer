@@ -23,7 +23,7 @@ public class Guild extends Chat {
     private String guildPictureUrl;
 
     @ManyToOne
-    private User createdBy;
+    private User owner;
 
     private boolean isPublic;
 

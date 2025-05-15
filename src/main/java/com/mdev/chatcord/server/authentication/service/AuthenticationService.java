@@ -51,7 +51,7 @@ public class AuthenticationService {
 
         if (!emailService.isEmailVerified(email)){
             if (otpService.canResendOtp(email) <= 0)
-                otpService.generateOtp(email);
+                emailService.validateEmailOtp(email);
             throw new LockedException("Please verify your email.");
         }
 
@@ -82,7 +82,7 @@ public class AuthenticationService {
     public void registerUser(@Valid @Email(message = "Enter a valid email address.") String email, String password, String username){
 
         if (emailService.isEmailRegistered(email))
-            throw new AlreadyRegisteredException("Account with this Email Address already registered.");
+            throw new AlreadyRegisteredException("Account with this email already registered.");
 
 
         @Null(message = "BAD REQUEST: Something went wrong when adding new friend.")

@@ -15,7 +15,7 @@ import java.util.Set;
 @Setter
 public class ChatRole {
 
-    @Id @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name; // Role name

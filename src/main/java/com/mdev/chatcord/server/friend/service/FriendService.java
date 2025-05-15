@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.friend.service;
 
+import com.mdev.chatcord.server.exception.AlreadyRegisteredException;
 import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
 import com.mdev.chatcord.server.friend.dto.FriendDTO;
 import com.mdev.chatcord.server.friend.model.Friend;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.config.annotation.AlreadyBuiltException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -34,16 +36,15 @@ public class FriendService {
     private final UserStatusRepository userStatusRepository;
     private final FriendRepository friendRepository;
 
-    public FriendDTO addFriend(@Valid @Email(message = EMAIL_NOT_EXISTS) String ownerEmail, String friendUsername,
-                               String friendTag){
+    public FriendDTO addFriend(@Valid String uuid, String friendUsername, String friendTag){
+
         @Null(message = "UNAUTHORIZED: Something went wrong")
-        User owner = userRepository.findByEmail(ownerEmail);
+        User owner = userRepository.findByUuid(UUID.fromString(uuid));
 
         @Null(message = "A user with this name and tag does not exists.")
         User friend = userRepository.findByUsernameAndTag(friendUsername, friendTag);
 
-
-        if (Objects.equals(owner.getId(), friend.getId()))
+        if (owner.getId().equals(friend.getId()))
             throw new IllegalArgumentException("You cannot add yourself as a friend.");
 
         if (!owner.isAccountNonLocked())
@@ -57,7 +58,7 @@ public class FriendService {
         Optional<UserStatus> userStatus = userStatusRepository.findByUserId(friend.getId());
 
         if (friendRepository.existsByOwnerIdAndFriendId(owner.getId(), friend.getId())){
-            throw new AlreadyBuiltException("You added " + friend.getUsername()
+            throw new AlreadyRegisteredException("You added " + friend.getUsername()
                     + "#" + friend.getTag() + " already.");
         }
         else {
@@ -77,14 +78,29 @@ public class FriendService {
         User owner = userRepository.findByUuid(UUID.fromString(uuid));
 
         // In-Future if database became bigger overtime, must use pagination (+300 Records).
-        List<Friend> friends = friendRepository.findAllByOwnerId(owner.getId(), Pageable.unpaged()).getContent();
+        List<Friend> friendships = friendRepository.findAllByOwnerId(owner.getId(), Pageable.unpaged()).getContent();
         List<FriendContactDTO> friendDTOList = new ArrayList<>();
-        for (Friend friend : friends) {
-            UserProfile friendProfile = profileRepository.findByUserId(friend.getId()).get();
+        for (Friend friend : friendships) {
+            UserProfile friendProfile = profileRepository.findByUserId(friend.getFriend().getId()).orElseThrow(() -> new UsernameNotFoundException("User with ID " + friend.getId() + " not found"));;
             //PrivateChat friendChat = pr
             friendDTOList.add(new FriendContactDTO(friend.getFriend().getUsername(), friend.getFriend().getTag(),
                     friendProfile.getProfilePictureUrl(), null, null));
         }
         return friendDTOList;
+    }
+
+    public FriendContactDTO getFriend(String uuid, String username, String tag) {
+        User owner = userRepository.findByUuid(UUID.fromString(uuid));
+
+        // In-Future if database became bigger overtime, must use pagination (+300 Records).
+        Friend friendship = friendRepository.findByFriendUsernameAndTag(owner.getId(), username, tag).orElseThrow(() -> new UsernameNotFoundException(""));
+        FriendContactDTO friendDTO;
+
+        UserProfile friendProfile = profileRepository.findByUserId(friendship.getFriend().getId()).orElseThrow(() -> new UsernameNotFoundException(""));
+        //PrivateChat friendChat = pr
+        friendDTO = new FriendContactDTO(friendship.getFriend().getUsername(), friendship.getFriend().getTag(),
+                friendProfile.getProfilePictureUrl(), null, null);
+
+        return friendDTO;
     }
 }
