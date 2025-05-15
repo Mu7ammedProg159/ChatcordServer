@@ -34,17 +34,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AlreadyVerifiedException.class)
     public ResponseEntity<String> handleAlreadyVerifiedException(AlreadyVerifiedException ex) {
-        return ResponseEntity.status(HttpStatus.ALREADY_REPORTED).body("The account is already verified.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("The account is already verified.");
     }
 
     @ExceptionHandler(AlreadyRegisteredException.class)
     public ResponseEntity<String> handleAlreadyRegisteredException(AlreadyRegisteredException ex) {
-        return ResponseEntity.status(HttpStatus.ALREADY_REPORTED).body("Account with this email address already registered.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("Account with this email address already registered.");
     }
 
     @ExceptionHandler(FriendshipNotFoundException.class)
     public ResponseEntity<String> handleFriendshipNotFoundException(FriendshipNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Friend doesn't exists.");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
     @ExceptionHandler(FriendAlreadyAddedException.class)

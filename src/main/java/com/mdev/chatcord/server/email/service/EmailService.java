@@ -9,6 +9,7 @@ import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -35,6 +36,7 @@ public class EmailService {
         }
     }
 
+    @Async
     public void validateEmailOtp(String email){
         if (isEmailVerified(email))
             throw new AlreadyVerifiedException("Email address already verified.");

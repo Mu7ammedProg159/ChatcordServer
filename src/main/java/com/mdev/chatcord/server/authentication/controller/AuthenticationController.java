@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailSendException;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -26,6 +27,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @EnableMethodSecurity
+@EnableAsync
 @RequestMapping("/api/auth")
 @Slf4j
 public class AuthenticationController {
@@ -48,12 +50,9 @@ public class AuthenticationController {
         @Email
         String email = jwtRequest.getEmail();
         authenticationService.registerUser(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getUsername());
-        try {
-            emailService.validateEmailOtp(email);
 
-        } catch (AlreadyRegisteredException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+        emailService.validateEmailOtp(email);
+
         return ResponseEntity.ok("User Registered Successfully, " +
                 "Please Verify your Email Address to avoid losing your account.");
     }

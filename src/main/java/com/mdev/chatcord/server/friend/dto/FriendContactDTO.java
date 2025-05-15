@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.friend.dto;
 
+import com.mdev.chatcord.server.friend.service.EFriendStatus;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -17,5 +18,6 @@ public class FriendContactDTO {
     // checks the private chat if exists with the id of this friend and fetch.
     private String lastMessageSent;
     private LocalDateTime LastMessageSendDate;
+    private EFriendStatus friendStatus;
 
 }

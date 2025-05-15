@@ -48,6 +48,11 @@ public class FriendController {
 
     }
 
+    @GetMapping("/pending/all")
+    public ResponseEntity<?> retrieveAllPendingFriends(@AuthenticationPrincipal Jwt jwt) {
+        List<FriendContactDTO> pendingFriends = friendService.getAllPendingFriends(jwt.getClaimAsString("uuid"));
+        return ResponseEntity.ok(pendingFriends);
+    }
 
     @GetMapping("/all")
     public ResponseEntity<?> getAllFriends(@AuthenticationPrincipal Jwt jwt){

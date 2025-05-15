@@ -1,6 +1,7 @@
 package com.mdev.chatcord.server.friend.repository;
 
 import com.mdev.chatcord.server.friend.model.Friend;
+import com.mdev.chatcord.server.friend.service.EFriendStatus;
 import jakarta.websocket.server.PathParam;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,10 @@ public interface FriendRepository extends JpaRepository<Friend, Long> {
 
     @Query("SELECT f FROM Friend f where f.owner.id = :ownerId")
     Page<Friend> findAllByOwnerId(@Param("ownerId") Long ownerId, Pageable pageable);
+
+    @Query("SELECT f FROM Friend f WHERE f.friendStatus = :friendStatus AND f.friend.id = :friendId")
+    Page<Friend> findAllByFriendStatusAndFriendId(@Param("friendStatus") EFriendStatus friendStatus,
+                                                  @Param("friendId") Long friendId, Pageable pageable);
 
     boolean existsByOwnerIdAndFriendId(Long owner_id, Long friend_id);
 

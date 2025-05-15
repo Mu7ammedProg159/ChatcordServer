@@ -11,6 +11,7 @@ import com.mdev.chatcord.server.user.model.UserStatus;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import com.mdev.chatcord.server.user.repository.UserRepository;
 import com.mdev.chatcord.server.user.repository.UserStatusRepository;
+import io.jsonwebtoken.Jwt;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Null;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.config.annotation.AlreadyBuiltException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -47,10 +49,6 @@ public class FriendService {
 
         if (!owner.isAccountNonLocked())
            throw new LockedException("Please verify your email address to use this feature."); // Not now ..
-
-        if (!friendRepository.existsByOwnerIdAndFriendId(owner.getId(), friend.getId()))
-            throw new FriendshipNotFoundException("Account with username: " + friendUsername + " and tag: "
-                    + friendTag + " not exists."); //Check this
 
         Optional<UserProfile> userProfile = profileRepository.findByUserId(friend.getId());
         Optional<UserStatus> userStatus = userStatusRepository.findByUserId(friend.getId());
@@ -82,7 +80,23 @@ public class FriendService {
             UserProfile friendProfile = profileRepository.findByUserId(friend.getFriend().getId()).orElseThrow(() -> new UsernameNotFoundException("User with ID " + friend.getId() + " not found"));;
             //PrivateChat friendChat = pr
             friendDTOList.add(new FriendContactDTO(friend.getFriend().getUsername(), friend.getFriend().getTag(),
-                    friendProfile.getProfilePictureUrl(), null, null));
+                    friendProfile.getProfilePictureUrl(), null, null, friend.getFriendStatus()));
+        }
+        return friendDTOList;
+    }
+
+    public List<FriendContactDTO> getAllPendingFriends(String uuid) {
+        User currentUser = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new UsernameNotFoundException(""));
+
+        // In-Future if database became bigger overtime, must use pagination (+300 Records).
+        List<Friend> pendingFriendships = friendRepository.findAllByFriendStatusAndFriendId(EFriendStatus.PENDING, currentUser.getId(), Pageable.unpaged()).getContent();
+        List<FriendContactDTO> friendDTOList = new ArrayList<>();
+
+        for (Friend friend : pendingFriendships) {
+            UserProfile friendProfile = profileRepository.findByUserId(friend.getOwner().getId()).orElseThrow(() -> new UsernameNotFoundException("User with ID " + friend.getId() + " not found"));;
+            //PrivateChat friendChat = pr
+            friendDTOList.add(new FriendContactDTO(friend.getOwner().getUsername(), friend.getOwner().getTag(),
+                    friendProfile.getProfilePictureUrl(), null, null, EFriendStatus.REQUESTED));
         }
         return friendDTOList;
     }
@@ -108,7 +122,7 @@ public class FriendService {
         UserProfile friendProfile = profileRepository.findByUserId(friendship.getFriend().getId()).orElseThrow(() -> new UsernameNotFoundException(""));
         //PrivateChat friendChat = pr
         friendDTO = new FriendContactDTO(friendship.getFriend().getUsername(), friendship.getFriend().getTag(),
-                friendProfile.getProfilePictureUrl(), null, null);
+                friendProfile.getProfilePictureUrl(), null, null, friendship.getFriendStatus());
 
         return friendDTO;
     }
