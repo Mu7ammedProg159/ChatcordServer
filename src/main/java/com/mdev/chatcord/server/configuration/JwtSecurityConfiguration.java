@@ -1,10 +1,12 @@
 package com.mdev.chatcord.server.configuration;
 
+import com.mdev.chatcord.server.token.service.TokenService;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -34,13 +36,11 @@ import java.util.UUID;
 @Configuration
 @EnableWebSecurity
 @EnableAsync
+@RequiredArgsConstructor
 public class JwtSecurityConfiguration {
 
     private final UserDetailsService userDetailsService;
-
-    public JwtSecurityConfiguration(UserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
-    }
+    private final TokenService tokenService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -83,44 +83,11 @@ public class JwtSecurityConfiguration {
         return jwtAuthenticationConverter;
     }
 
-
-    @Bean
-    public KeyPair keyPair(){
-        try{
-            var keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-            keyPairGenerator.initialize(2048);
-            return keyPairGenerator.generateKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Bean
-    public RSAKey rsaKey(KeyPair keyPair){
-        return new RSAKey
-                .Builder((RSAPublicKey) keyPair.getPublic())
-                .privateKey(keyPair.getPrivate())
-                .keyID(UUID.randomUUID().toString())
-                .build();
-
-    }
-
-    @Bean
-    public JWKSource<SecurityContext> jwkSource(RSAKey rsaKey) {
-        var jwkSet = new JWKSet(rsaKey);
-        return (JWKSelector, context) -> JWKSelector.select(jwkSet);
-    }
-
     @Bean
     public JwtDecoder jwtDecoder(RSAKey rsaKey) throws JOSEException {
 
-        return NimbusJwtDecoder.withPublicKey(rsaKey.toRSAPublicKey())
+        return NimbusJwtDecoder.withPublicKey(tokenService.getPublicKey())
                 .build();
-    }
-
-    @Bean
-    public JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource){
-        return new NimbusJwtEncoder(jwkSource);
     }
 
     @Bean
