@@ -17,14 +17,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @EnableMethodSecurity
-@RequestMapping("/api/auth")
+@RequestMapping("/api/auth/email")
 public class EmailController {
 
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final OtpService otpService;
 
-    @PostMapping("/verify-email")
+    @PostMapping("/verify")
     public ResponseEntity<String> verifyEmail(@RequestBody OtpRequest otpRequest){
         if(otpService.validateOtp(otpRequest.email(), otpRequest.otp())) {
 

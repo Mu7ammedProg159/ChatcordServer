@@ -6,7 +6,6 @@ import com.mdev.chatcord.server.user.dto.Profile;
 import com.mdev.chatcord.server.authentication.service.AuthenticationService;
 import com.mdev.chatcord.server.authentication.service.ERoles;
 import com.mdev.chatcord.server.email.service.EmailService;
-import com.mdev.chatcord.server.authentication.service.JwtService;
 import com.mdev.chatcord.server.email.service.OtpService;
 import com.mdev.chatcord.server.user.service.UserService;
 import jakarta.validation.constraints.Email;
@@ -29,7 +28,6 @@ import java.util.UUID;
 @RequestMapping("/api/auth/admin")
 public class AdminController {
 
-    private final JwtService jwtService;
     private final EmailService emailService;
     private final OtpService otpService;
     private final UserService userService;

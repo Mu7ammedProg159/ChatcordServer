@@ -28,6 +28,16 @@ public class DeviceSession {
     private String ip;
     private Instant createdAt;
 
+    public DeviceSession(User user, String deviceId, String deviceName, String os, String osVersion, String ip, Instant createdAt) {
+        this.user = user;
+        this.deviceId = deviceId;
+        this.deviceName = deviceName;
+        this.os = os;
+        this.osVersion = osVersion;
+        this.ip = ip;
+        this.createdAt = createdAt;
+    }
+
     @PrePersist
     protected void onCreate(){
         this.createdAt = Instant.now();

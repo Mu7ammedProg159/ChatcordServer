@@ -17,15 +17,13 @@ public class DeviceSessionService implements DeviceSessionServiceImpl{
     private final UserRepository userRepository;
 
     @Override
-    public boolean existsForUser(String subject, String deviceId) {
-        User user = userRepository.findByEmail(subject);
+    public boolean existsForUser(User user, String deviceId) {
         return deviceSessionRepository.existsByUserIdAndDeviceId(user, deviceId);
     }
 
     @Override
-    public void saveSession(String subject, String deviceId, String deviceName, String os, String osVersion, String ip) {
-        if (!existsForUser(subject, deviceId)){
-            User user = userRepository.findByEmail(subject);
+    public void saveSession(User user, String deviceId, String deviceName, String os, String osVersion, String ip) {
+        if (!existsForUser(user, deviceId)){
             DeviceSession session = DeviceSession.builder()
                     .user(user)
                     .deviceId(deviceId)

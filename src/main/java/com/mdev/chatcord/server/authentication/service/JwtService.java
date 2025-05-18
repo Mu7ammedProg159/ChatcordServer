@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.stream.Collectors;
 
-@Service
+//@Service
 @RequiredArgsConstructor
 public class JwtService {
 
@@ -50,11 +50,6 @@ public class JwtService {
         return authentication.getAuthorities().stream()
                 .map(a -> a.getAuthority())
                 .collect (Collectors.joining(" "));
-    }
-
-    public String getUUIDFromJwt(Authentication authentication) {
-        Object principal = authentication.getPrincipal();
-        return ((Jwt) principal).getClaim("uuid"); // or throw an exception
     }
 
 

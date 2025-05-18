@@ -51,7 +51,7 @@ public class JwtSecurityConfiguration {
                     .requestMatchers("/api/auth/admin/register").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/api/request/**").authenticated()
-                    .anyRequest().authenticated()
+                    .anyRequest().permitAll()
             )
             .sessionManagement(session -> session
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -84,7 +84,7 @@ public class JwtSecurityConfiguration {
     }
 
     @Bean
-    public JwtDecoder jwtDecoder(RSAKey rsaKey) throws JOSEException {
+    public JwtDecoder jwtDecoder() throws JOSEException {
 
         return NimbusJwtDecoder.withPublicKey(tokenService.getPublicKey())
                 .build();

@@ -2,7 +2,6 @@ package com.mdev.chatcord.server.storage.controller;
 
 import com.mdev.chatcord.server.storage.service.FileStorageService;
 import com.mdev.chatcord.server.user.repository.UserRepository;
-import com.mdev.chatcord.server.authentication.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -22,7 +21,6 @@ import java.util.Map;
 public class FileStorageController {
 
     private final UserRepository userRepository;
-    private final JwtService jwtService;
     private final FileStorageService fileStorageService;
 
     @PostMapping("/upload")

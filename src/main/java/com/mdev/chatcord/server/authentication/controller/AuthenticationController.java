@@ -1,21 +1,22 @@
 package com.mdev.chatcord.server.authentication.controller;
 
+import com.mdev.chatcord.server.device.service.DeviceSessionService;
+import com.mdev.chatcord.server.device.service.EPlatform;
+import com.mdev.chatcord.server.device.service.RequestMetadataUtil;
 import com.mdev.chatcord.server.email.service.EmailService;
 import com.mdev.chatcord.server.email.service.OtpService;
-import com.mdev.chatcord.server.exception.AlreadyRegisteredException;
 import com.mdev.chatcord.server.authentication.dto.JwtRequest;
 import com.mdev.chatcord.server.authentication.service.AuthenticationService;
-import com.mdev.chatcord.server.authentication.service.JwtService;
+import com.mdev.chatcord.server.token.service.TokenService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailSendException;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.LockedException;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -35,13 +36,17 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
     private final EmailService emailService;
     private final OtpService otpService;
-    private final JwtService jwtService;
+//    private final JwtService jwtService;
+    private final DeviceSessionService deviceSessionService;
+    private final TokenService tokenService;
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody JwtRequest jwtRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody JwtRequest jwtRequest, HttpServletRequest httpHeaders) {
 
-        String token = authenticationService.login(jwtRequest.getEmail(), jwtRequest.getPassword());
-        return ResponseEntity.ok(token);
+        String ip = RequestMetadataUtil.extractIp(httpHeaders);
+        String userAgent = RequestMetadataUtil.extractUserAgent(httpHeaders);
+
+        return ResponseEntity.ok(authenticationService.login(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getDeviceDto(), userAgent));
     }
 
     @PostMapping("/register")
@@ -57,41 +62,10 @@ public class AuthenticationController {
                 "Please Verify your Email Address to avoid losing your account.");
     }
 
-    @PostMapping("/resend-otp")
-    public ResponseEntity<String> resendOtp(@RequestBody EmailRequest emailRequest) {
-        if (!emailService.isEmailRegistered(emailRequest.email()))
-            return ResponseEntity.badRequest().body("Email not Registered.");
-
-        long remaining = otpService.canResendOtp(emailRequest.email());
-        if (remaining > 0) return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                .body("Please wait at least " + remaining + " seconds before resending the OTP.");
-
-        if (emailService.isEmailVerified(emailRequest.email())) return ResponseEntity
-                .status(HttpStatus.TOO_MANY_REQUESTS).body("This Email Address is already verified.");
-
-        String newOtp = otpService.generateOtp(emailRequest.email());
-        emailService.sendOtpEmail(emailRequest.email(), newOtp);
-
-        return ResponseEntity.ok("OTP resent successfully.");
-    }
-
-    @PostMapping("/retry-otp-send")
-    public ResponseEntity<?> canRetrySend(@RequestBody EmailRequest emailRequest) {
-        if (!emailService.isEmailRegistered(emailRequest.email()))
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email not Registered.");
-
-        if (emailService.isEmailVerified(emailRequest.email())) return ResponseEntity
-                .status(HttpStatus.TOO_MANY_REQUESTS).body("This Email Address is already verified.");
-
-        long remaining = otpService.canResendOtp(emailRequest.email());
-
-        return ResponseEntity.ok(remaining);
-    }
-
     @PostMapping("/authenticate")
     public Authentication authenticate(Authentication authentication) {
         log.info("These are the ROLES that {{}} has: [{}].", authentication.getName(), authentication.getAuthorities());
-        log.info("The UUID for this Account is: {}", UUID.fromString(jwtService.getUUIDFromJwt(authentication)));
+        log.info("The UUID for this Account is: {}", UUID.fromString(tokenService.getUUIDFromJwt(authentication)));
 
         return authentication;
     }

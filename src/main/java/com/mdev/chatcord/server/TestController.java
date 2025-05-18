@@ -1,7 +1,7 @@
 package com.mdev.chatcord.server;
 
+import com.mdev.chatcord.server.token.service.TokenService;
 import com.mdev.chatcord.server.user.repository.UserRepository;
-import com.mdev.chatcord.server.authentication.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -16,13 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class TestController {
 
     private final UserRepository userRepository;
-    private final JwtService jwtService;
+    private final TokenService tokenService;
 
     @GetMapping("/hello")
     @PreAuthorize("hasRole('USER')")
     public String hello() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return jwtService.getUUIDFromJwt(authentication);
+        return tokenService.getUUIDFromJwt(authentication);
     }
 
 

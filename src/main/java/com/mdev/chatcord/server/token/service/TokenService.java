@@ -7,21 +7,26 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.annotation.PostConstruct;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Duration;
@@ -34,15 +39,16 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TokenService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final Duration refreshTokenTTL = Duration.ofDays(7);
     private final Duration accessTokenTTL = Duration.ofMinutes(15);
 
-    @Value("${vault.url:http://localhost:8300}")
+    @Value("${vault.url}")
     private String vaultUrl;
 
-    @Value("${vault.token:myroot}")
+    @Value("${vault.token}")
     private String vaultToken;
 
     private PrivateKey privateKey;
@@ -53,25 +59,36 @@ public class TokenService {
     public void init() throws Exception {
         String privateKeyPem = fetchSecretFromVault("chatcord/data/rsa", "private");
 
+        log.info(privateKeyPem);
+
         privateKeyPem = privateKeyPem
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")
                 .replaceAll("\\s+", "");
 
+        log.info(privateKeyPem);
+
         byte[] privateKeyBytes = Base64.getDecoder().decode(privateKeyPem);
         PKCS8EncodedKeySpec privateSpec = new PKCS8EncodedKeySpec(privateKeyBytes);
         this.privateKey = KeyFactory.getInstance("RSA").generatePrivate(privateSpec);
-
-        // Optional: derive public key
-        this.publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(privateKey.getEncoded()));
     }
 
     private String fetchSecretFromVault(String path, String key) {
         String url = String.format("%s/v1/%s", vaultUrl, path);
 
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<Map> response = restTemplate
-                .getForEntity(url, Map.class);
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.set("X-Vault-Token", vaultToken);
+
+        HttpEntity<Void> entity = new HttpEntity<>(httpHeaders);
+
+        ResponseEntity<Map> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                Map.class
+        );
 
         Map data = (Map) ((Map) response.getBody().get("data")).get("data");
         return data.get(key).toString();
@@ -148,6 +165,22 @@ public class TokenService {
     }
 
     public RSAPublicKey getPublicKey() {
+
+        String publicKeyFromVault = fetchSecretFromVault("chatcord/data/rsa", "public");
+
+        String pem = publicKeyFromVault.replace("-----BEGIN PUBLIC KEY-----", "")
+                .replace("-----END PUBLIC KEY-----", "")
+                .replaceAll("\\s+", "");
+        byte[] pubBytes = Base64.getDecoder().decode(pem);
+        X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(pubBytes);
+        PublicKey publicKey = null;
+        try {
+            publicKey = KeyFactory.getInstance("RSA").generatePublic(pubSpec);
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
         return (RSAPublicKey) publicKey;
     }
 
@@ -155,5 +188,10 @@ public class TokenService {
         return authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect (Collectors.joining(" "));
+    }
+
+    public String getUUIDFromJwt(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+        return ((Jwt) principal).getClaim("uuid"); // or throw an exception
     }
 }

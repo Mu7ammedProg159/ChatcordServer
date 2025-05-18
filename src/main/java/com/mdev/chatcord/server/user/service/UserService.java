@@ -1,6 +1,5 @@
 package com.mdev.chatcord.server.user.service;
 
-import com.mdev.chatcord.server.authentication.service.JwtService;
 import com.mdev.chatcord.server.user.dto.Profile;
 import com.mdev.chatcord.server.user.model.User;
 import com.mdev.chatcord.server.user.model.UserProfile;
@@ -35,7 +34,6 @@ public class UserService {
     private final ProfileRepository profileRepository;
 
     private final AuthenticationManager authenticationManager;
-    private final JwtService jwtService;
 
     private final String default_pfp = "/images/default_pfp.png";
 
