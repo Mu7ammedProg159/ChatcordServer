@@ -1,5 +1,7 @@
 package com.mdev.chatcord.server.token.service;
 
+import com.mdev.chatcord.server.exception.ExpiredRefreshTokenException;
+import com.mdev.chatcord.server.exception.UnauthorizedException;
 import com.mdev.chatcord.server.token.model.RefreshTokenData;
 import com.mdev.chatcord.server.user.model.User;
 import io.jsonwebtoken.Claims;
@@ -7,6 +9,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.annotation.PostConstruct;
+import jakarta.validation.constraints.Null;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -118,7 +121,7 @@ public class TokenService {
                 .setSubject(authentication.getName())
                 .setClaims(claims)
                 .setIssuedAt(new Date())
-                .setExpiration(Date.from(Instant.now().plus(accessTokenTTL)))
+                .setExpiration(Date.from(Instant.now().plus(refreshTokenTTL)))
                 .signWith(privateKey, SignatureAlgorithm.RS256)
                 .compact();
 
@@ -153,7 +156,13 @@ public class TokenService {
     public boolean validateRefreshToken(String email, String deviceId, String jwt) {
         String key = buildRefreshKey(email, deviceId);
         RefreshTokenData stored = (RefreshTokenData) redisTemplate.opsForValue().get(key);
-        return stored != null && stored.getJwt().equals(jwt) && Instant.now().isBefore(stored.getExpiry());
+        if (stored == null)
+            throw new NullPointerException("Refresh Key is unavailable.");
+        if (Instant.now().isBefore(stored.getExpiry()))
+            throw new ExpiredRefreshTokenException("");
+        if (!stored.getJwt().equalsIgnoreCase(jwt))
+             throw new UnauthorizedException("The refresh key provided does not match.");
+        return true;
     }
 
     public void revokeRefreshToken(String email, String deviceId) {

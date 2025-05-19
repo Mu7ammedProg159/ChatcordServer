@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.authentication.service;
 
+import com.mdev.chatcord.server.authentication.dto.RefreshDto;
 import com.mdev.chatcord.server.device.dto.DeviceDto;
 import com.mdev.chatcord.server.device.service.DeviceSessionService;
 import com.mdev.chatcord.server.device.service.EPlatform;
@@ -7,7 +8,9 @@ import com.mdev.chatcord.server.device.service.IpLocationService;
 import com.mdev.chatcord.server.email.service.EmailService;
 import com.mdev.chatcord.server.email.service.OtpService;
 import com.mdev.chatcord.server.exception.AlreadyRegisteredException;
+import com.mdev.chatcord.server.exception.ExpiredRefreshTokenException;
 import com.mdev.chatcord.server.exception.NewDeviceAccessException;
+import com.mdev.chatcord.server.exception.UnauthorizedException;
 import com.mdev.chatcord.server.token.service.TokenService;
 import com.mdev.chatcord.server.user.model.User;
 import com.mdev.chatcord.server.user.model.UserStatus;
@@ -25,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -78,9 +82,12 @@ public class AuthenticationService {
             throw new LockedException("Please verify your email.");
         }
 
-        if (userAgent != null)
+        if (userAgent != null){
             deviceDto.setOs(userAgent);
+            deviceDto.setDeviceName("Web-Browser");
+        }
 
+        var location = locationService.getLocation(deviceDto.getIp());
         if (!deviceSessionService.existsForUser(user, deviceDto.getDeviceId())) {
             log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}]" +
                             " with IP ADDRESS: {}.",
@@ -90,7 +97,6 @@ public class AuthenticationService {
             // If this true that means it is the first time logging. EXCEPT if he logged out from all devices.
             if (deviceSessionService.getDevicesForUser(email).isEmpty()){
 
-                var location = locationService.getLocation(deviceDto.getIp());
 
                 log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}] from Country: {} and City: {}.",
                         user.getUuid(), deviceDto.getDeviceId(), deviceDto.getDeviceName(), deviceDto.getOs(),
@@ -104,7 +110,7 @@ public class AuthenticationService {
                emailService.validateNewDevice(email, deviceDto.getOs(), deviceDto.getDeviceName(), deviceDto.getIp());
                throw new NewDeviceAccessException("Suspicious Login in a new device: \n Device: " + deviceDto.getOs() +
                        " \n DeviceName: " + deviceDto.getDeviceName() + " \n Country: " +
-                       locationService.getLocation(deviceDto.getIp()));
+                       location.getCountry() + " \n City: " + location.getCity());
             }
         }
 
@@ -122,6 +128,25 @@ public class AuthenticationService {
         log.info("User with this Email Address: [{}] Has these Authorities.", auth.getAuthorities());
 
         return Arrays.asList(accessToken, refreshToken);
+    }
+
+    public List<String> refreshAccessToken(Authentication authentication, RefreshDto refreshDto) {
+        User user = userRepository.findByEmail(authentication.getName());
+        if (tokenService.validateToken(refreshDto.getRefreshToken())){
+            try {
+                if (tokenService.validateRefreshToken(authentication.getName(), refreshDto.getDeviceId(),
+                    refreshDto.getRefreshToken())){
+                    return Arrays.asList(tokenService.generateAccessToken(authentication, user, refreshDto.getDeviceId()));
+                }
+            } catch (ExpiredRefreshTokenException e) {
+                return Arrays.asList(tokenService.generateAccessToken(authentication, user, refreshDto.getDeviceId()),
+                        tokenService.generateRefreshToken(authentication, user, refreshDto.getDeviceId()));
+            }
+        }
+        else{
+            throw new UnauthorizedException("UNAUTHORIZED ACCESS: Invalid Refresh Key.");
+        }
+        throw new RuntimeException("INTERNAL SERVER ERROR: SOMETHING WENT WRONG REFRESHING TOKEN");
     }
 
     public void registerUser(@Valid @Email(message = "Enter a valid email address.") String email, String password, String username){

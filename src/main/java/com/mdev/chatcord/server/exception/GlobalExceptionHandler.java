@@ -27,6 +27,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email or password is invalid.");
     }
 
+    @ExceptionHandler({UnauthorizedException.class})
+    public ResponseEntity<String> handleUnauthorizedException(UnauthorizedException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized Access.");
+    }
+
     @ExceptionHandler(LockedException.class)
     public ResponseEntity<String> handleLockedException(LockedException ex) {
         return ResponseEntity.status(HttpStatus.LOCKED).body("Please verify your email address to login.");
@@ -65,6 +70,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CannotAddSelfException.class)
     public ResponseEntity<String> handleCannotAddSelfException(CannotAddSelfException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("You can't add yourself as a friend.");
+    }
+
+    @ExceptionHandler(NewDeviceAccessException.class)
+    public ResponseEntity<String> handleNewDeviceAccessException(NewDeviceAccessException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
     }
 
 }

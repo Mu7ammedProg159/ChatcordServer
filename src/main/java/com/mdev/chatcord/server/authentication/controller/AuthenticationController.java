@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.authentication.controller;
 
+import com.mdev.chatcord.server.authentication.dto.RefreshDto;
 import com.mdev.chatcord.server.device.service.DeviceSessionService;
 import com.mdev.chatcord.server.device.service.EPlatform;
 import com.mdev.chatcord.server.device.service.RequestMetadataUtil;
@@ -47,6 +48,11 @@ public class AuthenticationController {
         String userAgent = RequestMetadataUtil.extractUserAgent(httpHeaders);
 
         return ResponseEntity.ok(authenticationService.login(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getDeviceDto(), userAgent));
+    }
+
+    @PostMapping("/refresh-key")
+    public ResponseEntity<?> refreshToken(Authentication authentication, RefreshDto refreshDto){
+        return ResponseEntity.ok(authenticationService.refreshAccessToken(authentication, refreshDto));
     }
 
     @PostMapping("/register")

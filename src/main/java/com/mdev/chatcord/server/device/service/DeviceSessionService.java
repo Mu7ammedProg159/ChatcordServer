@@ -18,7 +18,7 @@ public class DeviceSessionService implements DeviceSessionServiceImpl{
 
     @Override
     public boolean existsForUser(User user, String deviceId) {
-        return deviceSessionRepository.existsByUserIdAndDeviceId(user, deviceId);
+        return deviceSessionRepository.existsByUserAndDeviceId(user, deviceId);
     }
 
     @Override
@@ -50,6 +50,6 @@ public class DeviceSessionService implements DeviceSessionServiceImpl{
     @Override
     public void removeDevice(String subject, String deviceId) {
         User user = userRepository.findByEmail(subject);
-        deviceSessionRepository.deleteByUserIdAndDeviceId(user, deviceId);
+        deviceSessionRepository.deleteByUserAndDeviceId(user, deviceId);
     }
 }
