@@ -10,9 +10,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DeviceDto {
-    private String deviceId;
-    private String deviceName;
-    private String os;
-    private String osVersion;
-    private String ip;
+    private String DEVICE_ID;
+    private String DEVICE_NAME;
+    private String OS;
+    private String OS_VERSION;
+    private String LOCAL_IP_ADDRESS;
 }

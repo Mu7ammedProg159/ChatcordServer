@@ -3,7 +3,6 @@ package com.mdev.chatcord.server.authentication.service;
 import com.mdev.chatcord.server.authentication.dto.RefreshDto;
 import com.mdev.chatcord.server.device.dto.DeviceDto;
 import com.mdev.chatcord.server.device.service.DeviceSessionService;
-import com.mdev.chatcord.server.device.service.EPlatform;
 import com.mdev.chatcord.server.device.service.IpLocationService;
 import com.mdev.chatcord.server.email.service.EmailService;
 import com.mdev.chatcord.server.email.service.OtpService;
@@ -19,7 +18,6 @@ import com.mdev.chatcord.server.user.repository.UserRepository;
 import com.mdev.chatcord.server.user.repository.UserStatusRepository;
 import com.mdev.chatcord.server.user.service.EUserState;
 import com.mdev.chatcord.server.user.service.UserService;
-import com.nimbusds.jose.util.JSONArrayUtils;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Null;
@@ -35,7 +33,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -83,39 +80,39 @@ public class AuthenticationService {
         }
 
         if (userAgent != null){
-            deviceDto.setOs(userAgent);
-            deviceDto.setDeviceName("Web-Browser");
+            deviceDto.setOS(userAgent);
+            deviceDto.setDEVICE_NAME("Web-Browser");
         }
 
-        var location = locationService.getLocation(deviceDto.getIp());
-        if (!deviceSessionService.existsForUser(user, deviceDto.getDeviceId())) {
+        var location = locationService.getLocation(deviceDto.getLOCAL_IP_ADDRESS());
+        if (!deviceSessionService.existsForUser(user, deviceDto.getDEVICE_ID())) {
             log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}]" +
                             " with IP ADDRESS: {}.",
-                    user.getUuid(), deviceDto.getDeviceId(), deviceDto.getDeviceName(), deviceDto.getOs(),
-                    deviceDto.getOsVersion(), deviceDto.getIp());
+                    user.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
+                    deviceDto.getOS_VERSION(), deviceDto.getLOCAL_IP_ADDRESS());
 
             // If this true that means it is the first time logging. EXCEPT if he logged out from all devices.
             if (deviceSessionService.getDevicesForUser(email).isEmpty()){
 
 
                 log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}] from Country: {} and City: {}.",
-                        user.getUuid(), deviceDto.getDeviceId(), deviceDto.getDeviceName(), deviceDto.getOs(),
-                        deviceDto.getOsVersion(), location.getCountry(), location.getCity());
+                        user.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
+                        deviceDto.getOS_VERSION(), location.getCountry(), location.getCity());
 
-                deviceSessionService.saveSession(user, deviceDto.getDeviceId(), deviceDto.getDeviceName(),
-                        deviceDto.getOs(), deviceDto.getOsVersion(), deviceDto.getIp());
+                deviceSessionService.saveSession(user, deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(),
+                        deviceDto.getOS(), deviceDto.getOS_VERSION(), deviceDto.getLOCAL_IP_ADDRESS());
             }
             else {
                 // This is a validation check, NOT YET LOGGED IN.
-               emailService.validateNewDevice(email, deviceDto.getOs(), deviceDto.getDeviceName(), deviceDto.getIp());
-               throw new NewDeviceAccessException("Suspicious Login in a new device: \n Device: " + deviceDto.getOs() +
-                       " \n DeviceName: " + deviceDto.getDeviceName() + " \n Country: " +
+               emailService.validateNewDevice(email, deviceDto.getOS(), deviceDto.getDEVICE_NAME(), deviceDto.getLOCAL_IP_ADDRESS());
+               throw new NewDeviceAccessException("Suspicious Login in a new device: \n Device: " + deviceDto.getOS() +
+                       " \n DeviceName: " + deviceDto.getDEVICE_NAME() + " \n Country: " +
                        location.getCountry() + " \n City: " + location.getCity());
             }
         }
 
-        String accessToken = tokenService.generateAccessToken(auth, user, deviceDto.getDeviceId());
-        String refreshToken = tokenService.generateRefreshToken(auth, user, deviceDto.getDeviceId());
+        String accessToken = tokenService.generateAccessToken(auth, user, deviceDto.getDEVICE_ID());
+        String refreshToken = tokenService.generateRefreshToken(auth, user, deviceDto.getDEVICE_ID());
 
 //        userRepository.save(user);
 

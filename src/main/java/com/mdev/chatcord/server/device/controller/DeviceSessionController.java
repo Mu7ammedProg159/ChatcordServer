@@ -8,6 +8,7 @@ import com.mdev.chatcord.server.email.service.OtpService;
 import com.mdev.chatcord.server.user.model.User;
 import com.mdev.chatcord.server.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -20,6 +21,7 @@ import java.util.List;
 @RestController
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@Slf4j
 @RequestMapping("api/devices")
 public class DeviceSessionController {
 
@@ -53,6 +55,7 @@ public class DeviceSessionController {
     @DeleteMapping("/device/{deviceId}")
     public ResponseEntity<?> removeDevice(@AuthenticationPrincipal Jwt jwt, @PathVariable String deviceId){
         deviceSessionService.removeDevice(jwt.getSubject(), deviceId);
+        log.info("THE EMAIL THAT REQUESTED THE DELETION IS: {}", jwt.getSubject());
         return ResponseEntity.ok("Device disconnected successfully");
     }
 
