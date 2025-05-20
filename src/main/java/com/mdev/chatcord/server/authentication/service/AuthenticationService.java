@@ -73,6 +73,8 @@ public class AuthenticationService {
 
         authenticationManager.authenticate(auth);
 
+        String refreshToken = null;
+
         if (!user.isEmailVerified()){
             if (otpService.canResendOtp(email) <= 0)
                 emailService.validateEmailOtp(email);
@@ -84,6 +86,7 @@ public class AuthenticationService {
             deviceDto.setDEVICE_NAME("Web-Browser");
         }
 
+
         var location = locationService.getLocation(deviceDto.getLOCAL_IP_ADDRESS());
         if (!deviceSessionService.existsForUser(user, deviceDto.getDEVICE_ID())) {
             log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}]" +
@@ -91,9 +94,10 @@ public class AuthenticationService {
                     user.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
                     deviceDto.getOS_VERSION(), deviceDto.getLOCAL_IP_ADDRESS());
 
+            refreshToken = tokenService.generateRefreshToken(auth, user, deviceDto.getDEVICE_ID());
+
             // If this true that means it is the first time logging. EXCEPT if he logged out from all devices.
             if (deviceSessionService.getDevicesForUser(email).isEmpty()){
-
 
                 log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}] from Country: {} and City: {}.",
                         user.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
@@ -112,7 +116,6 @@ public class AuthenticationService {
         }
 
         String accessToken = tokenService.generateAccessToken(auth, user, deviceDto.getDEVICE_ID());
-        String refreshToken = tokenService.generateRefreshToken(auth, user, deviceDto.getDEVICE_ID());
 
 //        userRepository.save(user);
 
