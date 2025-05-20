@@ -4,6 +4,8 @@ import com.mdev.chatcord.server.device.model.DeviceSession;
 import com.mdev.chatcord.server.device.repository.DeviceSessionRepository;
 import com.mdev.chatcord.server.user.model.User;
 import com.mdev.chatcord.server.user.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -48,6 +50,7 @@ public class DeviceSessionService implements DeviceSessionServiceImpl{
     }
 
     @Override
+    @Transactional
     public void removeDevice(String subject, String deviceId) {
         User user = userRepository.findByEmail(subject);
         deviceSessionRepository.deleteByUserAndDeviceId(user, deviceId);

@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public class RequestMetadataUtil {
 
-    public static String extractIp(HttpServletRequest request) {
+    public static String retrieveClientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isEmpty()) {
             return forwarded.split(",")[0];

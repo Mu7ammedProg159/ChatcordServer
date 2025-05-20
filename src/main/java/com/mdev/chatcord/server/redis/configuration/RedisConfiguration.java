@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server.configuration;
+package com.mdev.chatcord.server.redis.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;

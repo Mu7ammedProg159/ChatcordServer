@@ -2,6 +2,7 @@ package com.mdev.chatcord.server.device.service;
 
 import com.mdev.chatcord.server.device.model.DeviceSession;
 import com.mdev.chatcord.server.user.model.User;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 import java.util.UUID;

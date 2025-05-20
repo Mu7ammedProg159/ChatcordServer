@@ -9,6 +9,7 @@ import com.nimbusds.jose.proc.SecurityContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -27,9 +28,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.UUID;
 
@@ -40,7 +40,6 @@ import java.util.UUID;
 public class JwtSecurityConfiguration {
 
     private final UserDetailsService userDetailsService;
-    private final TokenService tokenService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -77,6 +76,7 @@ public class JwtSecurityConfiguration {
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
         authoritiesConverter.setAuthorityPrefix("ROLE_");
         authoritiesConverter.setAuthoritiesClaimName("scope");
+        authoritiesConverter.setAuthoritiesClaimName("device-id");
 
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
@@ -84,10 +84,38 @@ public class JwtSecurityConfiguration {
     }
 
     @Bean
-    public JwtDecoder jwtDecoder() throws JOSEException {
+    public JwtEncoder jwtEncoder() throws Exception {
+        JWKSource<SecurityContext> jwkSource = jwkSource();
+        return new NimbusJwtEncoder(jwkSource);
+    }
 
-        return NimbusJwtDecoder.withPublicKey(tokenService.getPublicKey())
-                .build();
+    @Bean
+    public JwtDecoder jwtDecoder() throws Exception {
+        return NimbusJwtDecoder.withPublicKey((RSAPublicKey) loadCertificate().getPublicKey()).build();
+    }
+
+    @Bean
+    public JWKSource<SecurityContext> jwkSource() throws Exception {
+        RSAKey rsaKey = RSAKey.load(loadKeyStore(), "jwt", "password".toCharArray());
+        JWKSet jwkSet = new JWKSet(rsaKey);
+        return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
+    }
+
+    private KeyStore loadKeyStore() throws Exception {
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        ClassPathResource ksFile = new ClassPathResource("jwt.p12");
+        keyStore.load(ksFile.getInputStream(), "password".toCharArray());
+        return keyStore;
+    }
+
+    private X509Certificate loadCertificate() throws Exception {
+        KeyStore keyStore = loadKeyStore();
+        return (X509Certificate) keyStore.getCertificate("jwt");
+    }
+
+    private PrivateKey loadPrivateKey() throws Exception {
+        KeyStore keyStore = loadKeyStore();
+        return (PrivateKey) keyStore.getKey("jwt", "password".toCharArray());
     }
 
     @Bean

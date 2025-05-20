@@ -20,7 +20,9 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,15 +46,15 @@ public class AuthenticationController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody JwtRequest jwtRequest, HttpServletRequest httpHeaders) {
 
-        String ip = RequestMetadataUtil.extractIp(httpHeaders);
+        String ip = RequestMetadataUtil.retrieveClientIp(httpHeaders);
         String userAgent = RequestMetadataUtil.extractUserAgent(httpHeaders);
 
-        return ResponseEntity.ok(authenticationService.login(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getDeviceDto(), userAgent));
+        return ResponseEntity.ok(authenticationService.login(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getDeviceDto(), userAgent, ip));
     }
 
     @PostMapping("/refresh-key")
-    public ResponseEntity<?> refreshToken(Authentication authentication, RefreshDto refreshDto){
-        return ResponseEntity.ok(authenticationService.refreshAccessToken(authentication, refreshDto));
+    public ResponseEntity<?> refreshToken(@AuthenticationPrincipal Jwt jwt, Authentication authentication, String deviceId){
+        return ResponseEntity.ok(authenticationService.refreshAccessToken(jwt, authentication, deviceId));
     }
 
     @PostMapping("/register")
@@ -74,6 +76,12 @@ public class AuthenticationController {
         log.info("The UUID for this Account is: {}", UUID.fromString(tokenService.getUUIDFromJwt(authentication)));
 
         return authentication;
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(Authentication auth, @RequestParam String deviceId) {
+        authenticationService.logout(auth.getName(), deviceId);
+        return ResponseEntity.ok(auth.getName() + " has been logged out.");
     }
 
     @DeleteMapping("/delete/user")

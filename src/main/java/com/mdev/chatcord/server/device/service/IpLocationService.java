@@ -1,6 +1,7 @@
 package com.mdev.chatcord.server.device.service;
 
 import com.mdev.chatcord.server.device.dto.LocationResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;

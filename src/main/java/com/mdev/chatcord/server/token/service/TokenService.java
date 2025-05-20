@@ -1,194 +1,119 @@
 package com.mdev.chatcord.server.token.service;
 
-import com.mdev.chatcord.server.exception.ExpiredRefreshTokenException;
 import com.mdev.chatcord.server.exception.UnauthorizedException;
-import com.mdev.chatcord.server.token.model.RefreshTokenData;
+import com.mdev.chatcord.server.redis.service.RefreshTokenStore;
 import com.mdev.chatcord.server.user.model.User;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import jakarta.annotation.PostConstruct;
-import jakarta.validation.constraints.Null;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class TokenService {
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final Duration refreshTokenTTL = Duration.ofDays(7);
-    private final Duration accessTokenTTL = Duration.ofMinutes(15);
+    //private final RedisTemplate<String, Object> redisTemplate;
 
-    @Value("${vault.url}")
-    private String vaultUrl;
+    private final JwtEncoder jwtEncoder; // Provided by Spring Authorization Server
+    private final RefreshTokenStore refreshTokenStore; // A Redis-backed service for storing refresh tokens.
 
-    @Value("${vault.token}")
-    private String vaultToken;
+    //@Value("application.chatcord.server.url")
+    private final String issuer = "http://localhost:8080";
 
-    private PrivateKey privateKey;
+    private final Duration ACCESS_TOKEN_TTL_SECONDS = Duration.ofMinutes(15); // 15 minutes
+    private final Duration REFRESH_TOKEN_TTL_SECONDS = Duration.ofDays(7); // 7 days
 
-    private PublicKey publicKey;
+    public String generateAccessToken(Jwt refreshJwt, String deviceId) {
 
-    @PostConstruct
-    public void init() throws Exception {
-        String privateKeyPem = fetchSecretFromVault("chatcord/data/rsa", "private");
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer(issuer)
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(ACCESS_TOKEN_TTL_SECONDS.toSeconds()))
+                .subject(refreshJwt.getSubject())
+                .claim("device-id", deviceId)
+                .claim("uuid", refreshJwt.getClaimAsString("uuid"))
+                .claim("scope", refreshJwt.getClaimAsString("scope"))
+                .build();
 
-        log.info(privateKeyPem);
-
-        privateKeyPem = privateKeyPem
-                .replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "")
-                .replaceAll("\\s+", "");
-
-        log.info(privateKeyPem);
-
-        byte[] privateKeyBytes = Base64.getDecoder().decode(privateKeyPem);
-        PKCS8EncodedKeySpec privateSpec = new PKCS8EncodedKeySpec(privateKeyBytes);
-        this.privateKey = KeyFactory.getInstance("RSA").generatePrivate(privateSpec);
+        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
     }
 
-    private String fetchSecretFromVault(String path, String key) {
-        String url = String.format("%s/v1/%s", vaultUrl, path);
+//    public String generateRefreshToken(Authentication authentication, String deviceId) {
+//
+//        JwtClaimsSet claims = JwtClaimsSet.builder()
+//                .issuer(issuer)
+//                .issuedAt(Instant.now())
+//                .expiresAt(Instant.now().plusSeconds(REFRESH_TOKEN_TTL_SECONDS.toSeconds()))
+//                .subject(authentication.getName())
+//                .claim("device-id", deviceId)
+//                .claim("uuid", getUUIDFromJwt(authentication))
+//                .claim("scope", createScope(authentication))
+//                .build();
+//
+//        String token = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+//        refreshTokenStore.save(authentication.getName(), deviceId, token, REFRESH_TOKEN_TTL_SECONDS.toSeconds());
+//        return token;
+//    }
+    public String generateAccessTokenByUser(User user, String deviceId) {
 
-        RestTemplate restTemplate = new RestTemplate();
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer(issuer)
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(ACCESS_TOKEN_TTL_SECONDS.toSeconds()))
+                .subject(user.getEmail())
+                .claim("device-id", deviceId)
+                .claim("uuid", user.getUuid())
+                .claim("scope", user.getRoles().stream().map(Enum::name).collect(Collectors.joining(" ")))
+                .build();
 
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.set("X-Vault-Token", vaultToken);
-
-        HttpEntity<Void> entity = new HttpEntity<>(httpHeaders);
-
-        ResponseEntity<Map> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                Map.class
-        );
-
-        Map data = (Map) ((Map) response.getBody().get("data")).get("data");
-        return data.get(key).toString();
+        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
     }
 
-    public String generateAccessToken(Authentication authentication, User user, String deviceId) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("deviceId", deviceId);
-        claims.put("uuid", user.getUuid());
-        claims.put("scope", createScope(authentication));
-        return Jwts.builder()
-                .setSubject(authentication.getName())
-                .setClaims(claims)
-                .setIssuedAt(new Date())
-                .setExpiration(Date.from(Instant.now().plus(accessTokenTTL)))
-                .signWith(privateKey, SignatureAlgorithm.RS256)
-                .compact();
+    public String generateRefreshToken(User user, String deviceId) {
+
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer(issuer)
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(REFRESH_TOKEN_TTL_SECONDS.toSeconds()))
+                .subject(user.getEmail())
+                .claim("device-id", deviceId)
+                .claim("uuid", user.getUuid())
+                .claim("scope", user.getRoles().stream().map(Enum::name).collect(Collectors.joining(" ")))
+                .build();
+
+        String token = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+        refreshTokenStore.save(user.getEmail(), deviceId, token, REFRESH_TOKEN_TTL_SECONDS.toSeconds());
+        return token;
     }
 
-    public String generateRefreshToken(Authentication authentication, User user, String deviceId) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("deviceId", deviceId);
-        claims.put("uuid", user.getUuid());
-        claims.put("scope", createScope(authentication));
-
-        String jwt = Jwts.builder()
-                .setSubject(authentication.getName())
-                .setClaims(claims)
-                .setIssuedAt(new Date())
-                .setExpiration(Date.from(Instant.now().plus(refreshTokenTTL)))
-                .signWith(privateKey, SignatureAlgorithm.RS256)
-                .compact();
-
-        storeRefreshToken(jwt, user.getEmail(), deviceId);
-        return jwt;
+    public boolean isRefreshTokenValid(String subject, String deviceId, String token) {
+        return refreshTokenStore.exists(subject, deviceId, token);
     }
 
-    public boolean validateToken(String jwt) {
-        try {
-            Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(jwt);
-            return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            return false;
+    public void invalidateRefreshToken(String username, String deviceId) {
+        refreshTokenStore.remove(username, deviceId);
+    }
+
+    public String renewAccessTokenFromRefreshToken(Jwt refreshJwt) {
+        // Assuming JwtDecoder validated and parsed the refresh token externally
+        String username = refreshJwt.getSubject();
+        String deviceId = (String) refreshJwt.getClaimAsString("device-id"); // or extract from refreshToken claims
+
+        if (!isRefreshTokenValid(username, deviceId, refreshJwt.getTokenValue())) {
+            throw new UnauthorizedException("Invalid refresh token: " + refreshJwt.getTokenValue());
         }
-    }
 
-    public Claims parseToken(String jwt) {
-        return Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(jwt).getBody();
-    }
-
-    public void storeRefreshToken(String refreshJwtToken, String email, String deviceId) {
-        RefreshTokenData tokenData = new RefreshTokenData();
-        tokenData.setJwt(refreshJwtToken);
-        tokenData.setEmail(email);
-        tokenData.setDeviceId(deviceId);
-        tokenData.setExpiry(Instant.now().plus(refreshTokenTTL));
-
-        String key = buildRefreshKey(email, deviceId);
-        redisTemplate.opsForValue().set(key, tokenData, refreshTokenTTL);
-    }
-
-    public boolean validateRefreshToken(String email, String deviceId, String jwt) {
-        String key = buildRefreshKey(email, deviceId);
-        RefreshTokenData stored = (RefreshTokenData) redisTemplate.opsForValue().get(key);
-        if (stored == null)
-            throw new NullPointerException("Refresh Key is unavailable.");
-        if (Instant.now().isBefore(stored.getExpiry()))
-            throw new ExpiredRefreshTokenException("");
-        if (!stored.getJwt().equalsIgnoreCase(jwt))
-             throw new UnauthorizedException("The refresh key provided does not match.");
-        return true;
-    }
-
-    public void revokeRefreshToken(String email, String deviceId) {
-        redisTemplate.delete(buildRefreshKey(email, deviceId));
-    }
-
-    private String buildRefreshKey(String email, String deviceId) {
-        return "refresh_token:" + email + ":" + deviceId;
-    }
-
-    public RSAPublicKey getPublicKey() {
-
-        String publicKeyFromVault = fetchSecretFromVault("chatcord/data/rsa", "public");
-
-        String pem = publicKeyFromVault.replace("-----BEGIN PUBLIC KEY-----", "")
-                .replace("-----END PUBLIC KEY-----", "")
-                .replaceAll("\\s+", "");
-        byte[] pubBytes = Base64.getDecoder().decode(pem);
-        X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(pubBytes);
-        PublicKey publicKey = null;
-        try {
-            publicKey = KeyFactory.getInstance("RSA").generatePublic(pubSpec);
-        } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-        return (RSAPublicKey) publicKey;
+        // You may extract the uuid and scope from the decoded JWT claims if needed
+        return generateAccessToken(refreshJwt, deviceId);
     }
 
     private String createScope(Authentication authentication) {
@@ -201,4 +126,162 @@ public class TokenService {
         Object principal = authentication.getPrincipal();
         return ((Jwt) principal).getClaim("uuid"); // or throw an exception
     }
+//    @Value("${vault.url}")
+//    private String vaultUrl;
+//
+//    @Value("${vault.token}")
+//    private String vaultToken;
+//
+//    private PrivateKey privateKey;
+//
+//    private PublicKey publicKey;
+//
+//    @PostConstruct
+//    public void init() throws Exception {
+//        getPrivateKey();
+//        getPublicKey();
+//    }
+//
+//    private void getPrivateKey() throws InvalidKeySpecException, NoSuchAlgorithmException {
+//        String privateKeyPem = fetchSecretFromVault("chatcord/data/rsa", "private");
+//
+//        //log.info(privateKeyPem);
+//
+//        privateKeyPem = privateKeyPem
+//                .replace("-----BEGIN PRIVATE KEY-----", "")
+//                .replace("-----END PRIVATE KEY-----", "")
+//                .replaceAll("\\s+", "");
+//
+//        //log.info(privateKeyPem);
+//
+//        byte[] privateKeyBytes = Base64.getDecoder().decode(privateKeyPem);
+//        PKCS8EncodedKeySpec privateSpec = new PKCS8EncodedKeySpec(privateKeyBytes);
+//        this.privateKey = KeyFactory.getInstance("RSA").generatePrivate(privateSpec);
+//    }
+//
+//    private String fetchSecretFromVault(String path, String key) {
+//        String url = String.format("%s/v1/%s", vaultUrl, path);
+//
+//        RestTemplate restTemplate = new RestTemplate();
+//
+//        HttpHeaders httpHeaders = new HttpHeaders();
+//        httpHeaders.set("X-Vault-Token", vaultToken);
+//
+//        HttpEntity<Void> entity = new HttpEntity<>(httpHeaders);
+//
+//        ResponseEntity<Map> response = restTemplate.exchange(
+//                url,
+//                HttpMethod.GET,
+//                entity,
+//                Map.class
+//        );
+//
+//        Map data = (Map) ((Map) response.getBody().get("data")).get("data");
+//        return data.get(key).toString();
+//    }
+//
+//    public String generateAccessToken(Authentication authentication, User user, String deviceId) {
+//        Map<String, Object> claims = new HashMap<>();
+//        claims.put("deviceId", deviceId);
+//        claims.put("uuid", user.getUuid());
+//        claims.put("scope", createScope(authentication));
+//        return Jwts.builder()
+//                .setSubject(user.getEmail())
+//                .setClaims(claims)
+//                .setIssuedAt(new Date())
+//                .setExpiration(Date.from(Instant.now().plus(accessTokenTTL)))
+//                .signWith(privateKey, SignatureAlgorithm.RS256)
+//                .compact();
+//    }
+//
+//    public String generateRefreshToken(Authentication authentication, User user, String deviceId) {
+//        Map<String, Object> claims = new HashMap<>();
+//        claims.put("deviceId", deviceId);
+//        claims.put("uuid", user.getUuid());
+//        claims.put("scope", createScope(authentication));
+//
+////        var jwtClaims = JwtClaimsSet.builder()
+////                .issuer("http://localhost:8080")
+////                .issuedAt(Instant.now())
+////                .expiresAt(Instant.now().plusSeconds(60 * 30))
+////                .subject(authentication.getName())
+////                .claim("uuid", user.getUuid())
+////                .claim("scope",createScope(authentication))
+////                .claim("device-id", deviceId)
+////                .build();
+//
+//        String jwt = Jwts.builder()
+//                .setClaims(claims)
+//                .setIssuedAt(new Date())
+//                .setExpiration(Date.from(Instant.now().plus(refreshTokenTTL)))
+//                .signWith(privateKey, SignatureAlgorithm.RS256)
+//                .setSubject(user.getEmail())
+//                .compact();
+//
+//        storeRefreshToken(jwt, user.getEmail(), deviceId);
+//        return jwt;
+//    }
+//
+//    public boolean validateToken(String jwt) {
+//        try {
+//
+//            Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(jwt);
+//            return true;
+//        } catch (JwtException | IllegalArgumentException e) {
+//            return false;
+//        }
+//    }
+//
+//    public Claims parseToken(String jwt) {
+//        return Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(jwt).getBody();
+//    }
+//
+//    public void storeRefreshToken(String refreshJwtToken, String email, String deviceId) {
+//        RefreshTokenData tokenData = new RefreshTokenData();
+//        tokenData.setJwt(refreshJwtToken);
+//        tokenData.setEmail(email);
+//        tokenData.setDeviceId(deviceId);
+//        tokenData.setExpiry(Instant.now().plus(refreshTokenTTL));
+//
+//        String key = buildRefreshKey(email, deviceId);
+//        redisTemplate.opsForValue().set(key, tokenData, refreshTokenTTL);
+//    }
+//
+//    public boolean validateRefreshToken(String email, String deviceId, String jwt) {
+//        String key = buildRefreshKey(email, deviceId);
+//        RefreshTokenData stored = (RefreshTokenData) redisTemplate.opsForValue().get(key);
+//        if (stored == null)
+//            throw new NullPointerException("Refresh Key is unavailable.");
+//        if (Instant.now().isBefore(stored.getExpiry()))
+//            throw new ExpiredRefreshTokenException("");
+//        if (!stored.getJwt().equalsIgnoreCase(jwt))
+//             throw new UnauthorizedException("The refresh key provided does not match.");
+//        return true;
+//    }
+//
+//    public void revokeRefreshToken(String email, String deviceId) {
+//        redisTemplate.delete(buildRefreshKey(email, deviceId));
+//    }
+//
+//    private String buildRefreshKey(String email, String deviceId) {
+//        return "refresh_token:" + email + ":" + deviceId;
+//    }
+//
+//    public RSAPublicKey getPublicKey() {
+//
+//        String publicKeyFromVault = fetchSecretFromVault("chatcord/data/rsa", "public");
+//
+//        String pem = publicKeyFromVault.replace("-----BEGIN PUBLIC KEY-----", "")
+//                .replace("-----END PUBLIC KEY-----", "")
+//                .replaceAll("\\s+", "");
+//        byte[] pubBytes = Base64.getDecoder().decode(pem);
+//        X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(pubBytes);
+//        try {
+//            publicKey = KeyFactory.getInstance("RSA").generatePublic(pubSpec);
+//        } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
+//            throw new RuntimeException(e);
+//        }
+//        return (RSAPublicKey) publicKey;
+//    }
+//
 }

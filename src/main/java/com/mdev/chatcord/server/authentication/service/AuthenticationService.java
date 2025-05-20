@@ -1,6 +1,5 @@
 package com.mdev.chatcord.server.authentication.service;
 
-import com.mdev.chatcord.server.authentication.dto.RefreshDto;
 import com.mdev.chatcord.server.device.dto.DeviceDto;
 import com.mdev.chatcord.server.device.service.DeviceSessionService;
 import com.mdev.chatcord.server.device.service.IpLocationService;
@@ -9,7 +8,7 @@ import com.mdev.chatcord.server.email.service.OtpService;
 import com.mdev.chatcord.server.exception.AlreadyRegisteredException;
 import com.mdev.chatcord.server.exception.ExpiredRefreshTokenException;
 import com.mdev.chatcord.server.exception.NewDeviceAccessException;
-import com.mdev.chatcord.server.exception.UnauthorizedException;
+import com.mdev.chatcord.server.redis.service.RefreshTokenStore;
 import com.mdev.chatcord.server.token.service.TokenService;
 import com.mdev.chatcord.server.user.model.User;
 import com.mdev.chatcord.server.user.model.UserStatus;
@@ -18,6 +17,7 @@ import com.mdev.chatcord.server.user.repository.UserRepository;
 import com.mdev.chatcord.server.user.repository.UserStatusRepository;
 import com.mdev.chatcord.server.user.service.EUserState;
 import com.mdev.chatcord.server.user.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Null;
@@ -28,9 +28,9 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -55,11 +55,10 @@ public class AuthenticationService {
 
     private final DeviceSessionService deviceSessionService;
     private final TokenService tokenService;
+    private final RefreshTokenStore refreshTokenStore;
     private final IpLocationService locationService;
 
-
-
-    public List<String> login(@Valid @Email(message = "Enter a valid email address.") String email, String password, DeviceDto deviceDto, String userAgent){
+    public List<String> login(@Valid @Email(message = "Enter a valid email address.") String email, String password, DeviceDto deviceDto, String userAgent,  String IP_ADDRESS){
 
         if (!emailService.isEmailRegistered(email))
             throw new UsernameNotFoundException("Account with this Email Address not found.");
@@ -67,11 +66,9 @@ public class AuthenticationService {
         @Null(message = "Email or password is invalid.")
         User user = userRepository.findByEmail(email);
 
-        var auth = new UsernamePasswordAuthenticationToken(email, password, mapRolesToAuthorities(user));
-
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        authenticationManager.authenticate(auth);
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(email, password, mapRolesToAuthorities(user))
+        );
 
         String refreshToken = null;
 
@@ -81,20 +78,19 @@ public class AuthenticationService {
             throw new LockedException("Please verify your email.");
         }
 
-        if (userAgent != null){
+        if (userAgent != null && userAgent.equalsIgnoreCase("ReactorNetty/1.2.4")){
             deviceDto.setOS(userAgent);
             deviceDto.setDEVICE_NAME("Web-Browser");
         }
 
-
-        var location = locationService.getLocation(deviceDto.getLOCAL_IP_ADDRESS());
+        var location = locationService.getLocation(IP_ADDRESS);
         if (!deviceSessionService.existsForUser(user, deviceDto.getDEVICE_ID())) {
             log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}]" +
                             " with IP ADDRESS: {}.",
                     user.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
-                    deviceDto.getOS_VERSION(), deviceDto.getLOCAL_IP_ADDRESS());
+                    deviceDto.getOS_VERSION(), IP_ADDRESS);
 
-            refreshToken = tokenService.generateRefreshToken(auth, user, deviceDto.getDEVICE_ID());
+            refreshToken = tokenService.generateRefreshToken(user, deviceDto.getDEVICE_ID());
 
             // If this true that means it is the first time logging. EXCEPT if he logged out from all devices.
             if (deviceSessionService.getDevicesForUser(email).isEmpty()){
@@ -104,18 +100,18 @@ public class AuthenticationService {
                         deviceDto.getOS_VERSION(), location.getCountry(), location.getCity());
 
                 deviceSessionService.saveSession(user, deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(),
-                        deviceDto.getOS(), deviceDto.getOS_VERSION(), deviceDto.getLOCAL_IP_ADDRESS());
+                        deviceDto.getOS(), deviceDto.getOS_VERSION(), IP_ADDRESS);
             }
             else {
                 // This is a validation check, NOT YET LOGGED IN.
-               emailService.validateNewDevice(email, deviceDto.getOS(), deviceDto.getDEVICE_NAME(), deviceDto.getLOCAL_IP_ADDRESS());
+               emailService.validateNewDevice(email, deviceDto.getOS(), deviceDto.getDEVICE_NAME(), IP_ADDRESS);
                throw new NewDeviceAccessException("Suspicious Login in a new device: \n Device: " + deviceDto.getOS() +
                        " \n DeviceName: " + deviceDto.getDEVICE_NAME() + " \n Country: " +
                        location.getCountry() + " \n City: " + location.getCity());
             }
         }
 
-        String accessToken = tokenService.generateAccessToken(auth, user, deviceDto.getDEVICE_ID());
+        String accessToken = tokenService.generateAccessTokenByUser(user, deviceDto.getDEVICE_ID());
 
 //        userRepository.save(user);
 
@@ -127,25 +123,20 @@ public class AuthenticationService {
         log.info("User with this Email Address: [{}] Logged In Successfully. His UUID is: ", auth.getName());
         log.info("User with this Email Address: [{}] Has these Authorities.", auth.getAuthorities());
 
-        return Arrays.asList(accessToken, refreshToken);
+        return Arrays.asList(accessToken, refreshToken, String.valueOf(user.getUuid()));
     }
 
-    public List<String> refreshAccessToken(Authentication authentication, RefreshDto refreshDto) {
-        User user = userRepository.findByEmail(authentication.getName());
-        if (tokenService.validateToken(refreshDto.getRefreshToken())){
+    public List<String> refreshAccessToken(Jwt jwt, Authentication authentication, String deviceId) {
+        User user = userRepository.findByEmail(jwt.getSubject());
             try {
-                if (tokenService.validateRefreshToken(authentication.getName(), refreshDto.getDeviceId(),
-                    refreshDto.getRefreshToken())){
-                    return Arrays.asList(tokenService.generateAccessToken(authentication, user, refreshDto.getDeviceId()));
+                if (tokenService.isRefreshTokenValid(jwt.getSubject(), deviceId,
+                        jwt.getTokenValue())){
+                    return Arrays.asList(tokenService.generateAccessToken(jwt, deviceId));
                 }
             } catch (ExpiredRefreshTokenException e) {
-                return Arrays.asList(tokenService.generateAccessToken(authentication, user, refreshDto.getDeviceId()),
-                        tokenService.generateRefreshToken(authentication, user, refreshDto.getDeviceId()));
+                return Arrays.asList(tokenService.generateAccessTokenByUser(user, deviceId),
+                        tokenService.generateRefreshToken(user, deviceId));
             }
-        }
-        else{
-            throw new UnauthorizedException("UNAUTHORIZED ACCESS: Invalid Refresh Key.");
-        }
         throw new RuntimeException("INTERNAL SERVER ERROR: SOMETHING WENT WRONG REFRESHING TOKEN");
     }
 
@@ -160,6 +151,10 @@ public class AuthenticationService {
 
         userService.createUser(user);
 
+    }
+
+    public void logout(String email, String deviceId){
+        refreshTokenStore.remove(email, deviceId);
     }
 
     public void registerUser(@Valid @Email(message = "Enter a valid email address.") String email, String password, String username, ERoles role){
