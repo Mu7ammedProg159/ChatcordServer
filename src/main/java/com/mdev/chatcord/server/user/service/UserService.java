@@ -61,7 +61,7 @@ public class UserService {
         @Null(message = "INTERNAL SERVER ERROR: There is no profile in this account.")
         Optional<UserStatus> userStatus = userStatusRepository.findByUserId(user.getId());
 
-        return new Profile(user.getEmail(), user.getUsername(), user.getTag(),
+        return new Profile(user.getUuid(), user.getEmail(), user.getUsername(), user.getTag(),
                 userStatus.get().getStatus().name(), userProfile.get().getProfilePictureUrl(),
                 userProfile.get().getAboutMe(), userProfile.get().getQuote());
 
@@ -78,7 +78,7 @@ public class UserService {
         @Null(message = "INTERNAL SERVER ERROR: There is no profile in this account.")
         Optional<UserStatus> userStatus = userStatusRepository.findByUserId(user.getId());
 
-        return new Profile(user.getEmail(), user.getUsername(), user.getTag(),
+        return new Profile(user.getUuid(), user.getEmail(), user.getUsername(), user.getTag(),
                 userStatus.get().getStatus().name(), userProfile.get().getProfilePictureUrl(),
                 userProfile.get().getAboutMe(), userProfile.get().getQuote());
 

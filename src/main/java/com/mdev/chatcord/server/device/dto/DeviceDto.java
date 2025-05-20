@@ -14,13 +14,10 @@ import lombok.Setter;
 public class DeviceDto {
     @JsonProperty("DEVICE_ID")
     private String DEVICE_ID;
-    @JsonIgnore
     @JsonProperty("DEVICE_NAME")
     private String DEVICE_NAME;
-    @JsonIgnore
     @JsonProperty("OS")
     private String OS;
-    @JsonIgnore
     @JsonProperty("OS_VERSION")
     private String OS_VERSION;
 }

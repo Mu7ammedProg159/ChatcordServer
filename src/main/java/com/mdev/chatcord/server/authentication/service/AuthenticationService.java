@@ -154,6 +154,7 @@ public class AuthenticationService {
     }
 
     public void logout(String email, String deviceId){
+        deviceSessionService.removeDevice(email, deviceId);
         refreshTokenStore.remove(email, deviceId);
     }
 
