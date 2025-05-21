@@ -5,9 +5,7 @@ import com.mdev.chatcord.server.device.service.DeviceSessionService;
 import com.mdev.chatcord.server.device.service.IpLocationService;
 import com.mdev.chatcord.server.email.service.EmailService;
 import com.mdev.chatcord.server.email.service.OtpService;
-import com.mdev.chatcord.server.exception.AlreadyRegisteredException;
-import com.mdev.chatcord.server.exception.ExpiredRefreshTokenException;
-import com.mdev.chatcord.server.exception.NewDeviceAccessException;
+import com.mdev.chatcord.server.exception.*;
 import com.mdev.chatcord.server.redis.service.RefreshTokenStore;
 import com.mdev.chatcord.server.token.service.TokenService;
 import com.mdev.chatcord.server.user.model.User;
@@ -24,9 +22,11 @@ import jakarta.validation.constraints.Null;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -61,21 +61,27 @@ public class AuthenticationService {
     public List<String> login(@Valid @Email(message = "Enter a valid email address.") String email, String password, DeviceDto deviceDto, String userAgent,  String IP_ADDRESS){
 
         if (!emailService.isEmailRegistered(email))
-            throw new UsernameNotFoundException("Account with this Email Address not found.");
+            throw new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND);
 
         @Null(message = "Email or password is invalid.")
         User user = userRepository.findByEmail(email);
 
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, password, mapRolesToAuthorities(user))
-        );
+        Authentication auth;
+        try {
+            auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(email, password, mapRolesToAuthorities(user))
+            );
+
+        } catch (BadCredentialsException ex){
+            throw new BusinessException(ExceptionCode.INVALID_CREDENTIALS);
+        }
 
         String refreshToken = null;
 
         if (!user.isEmailVerified()){
             if (otpService.canResendOtp(email) <= 0)
                 emailService.validateEmailOtp(email);
-            throw new LockedException("Please verify your email.");
+            throw new BusinessException(ExceptionCode.EMAIL_NOT_VERIFIED, "Please verify your email.");
         }
 
         if (userAgent != null && userAgent.equalsIgnoreCase("ReactorNetty/1.2.4")){
@@ -105,7 +111,8 @@ public class AuthenticationService {
             else {
                 // This is a validation check, NOT YET LOGGED IN.
                emailService.validateNewDevice(email, deviceDto.getOS(), deviceDto.getDEVICE_NAME(), IP_ADDRESS);
-               throw new NewDeviceAccessException("Suspicious Login in a new device: \n Device: " + deviceDto.getOS() +
+               throw new BusinessException(ExceptionCode.DEVICE_NOT_RECOGNIZED,
+                       "Suspicious Login in a new device: \n Device: " + deviceDto.getOS() +
                        " \n DeviceName: " + deviceDto.getDEVICE_NAME() + " \n Country: " +
                        location.getCountry() + " \n City: " + location.getCity());
             }
@@ -140,10 +147,11 @@ public class AuthenticationService {
         throw new RuntimeException("INTERNAL SERVER ERROR: SOMETHING WENT WRONG REFRESHING TOKEN");
     }
 
-    public void registerUser(@Valid @Email(message = "Enter a valid email address.") String email, String password, String username){
+    public void registerUser(@Valid @Email(message = "Enter a valid email address.") String email, String password,
+                             String username){
 
         if (emailService.isEmailRegistered(email))
-            throw new AlreadyRegisteredException("Account with this email already registered.");
+            throw new BusinessException(ExceptionCode.ACCOUNT_ALREADY_REGISTERED);
 
         @Null(message = "BAD REQUEST: Something went wrong when adding new friend.")
         User user = new User(email, new BCryptPasswordEncoder().encode(password), username);
@@ -158,7 +166,8 @@ public class AuthenticationService {
         refreshTokenStore.remove(email, deviceId);
     }
 
-    public void registerUser(@Valid @Email(message = "Enter a valid email address.") String email, String password, String username, ERoles role){
+    public void registerUser(@Valid @Email(message = "Enter a valid email address.") String email, String password,
+                             String username, ERoles role){
 
         @Null(message = "BAD REQUEST: Something went wrong when adding new friend.")
         User user = new User(email, password, username);

@@ -1,6 +1,5 @@
 package com.mdev.chatcord.server.authentication.controller;
 
-import com.mdev.chatcord.server.exception.AlreadyRegisteredException;
 import com.mdev.chatcord.server.authentication.dto.JwtRequest;
 import com.mdev.chatcord.server.user.dto.Profile;
 import com.mdev.chatcord.server.authentication.service.AuthenticationService;
@@ -58,13 +57,10 @@ public class AdminController {
     public ResponseEntity<?> registerAdmin(@RequestBody JwtRequest jwtRequest){
         @Email
         String email = jwtRequest.getEmail();
-        try {
-            emailService.validateEmailOtp(email);
 
-        } catch (AlreadyRegisteredException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+        emailService.validateEmailOtp(email);
         authenticationService.registerUser(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getUsername(), ERoles.ADMIN);
+
         return ResponseEntity.ok("User Registered Successfully, " +
                 "Please Verify your Email Address to avoid losing your account.");
     }

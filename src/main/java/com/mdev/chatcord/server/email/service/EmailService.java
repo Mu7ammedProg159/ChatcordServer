@@ -1,8 +1,8 @@
 package com.mdev.chatcord.server.email.service;
 
 import com.mdev.chatcord.server.device.service.IpLocationService;
-import com.mdev.chatcord.server.exception.AlreadyRegisteredException;
-import com.mdev.chatcord.server.exception.AlreadyVerifiedException;
+import com.mdev.chatcord.server.exception.BusinessException;
+import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,8 +10,6 @@ import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.security.authentication.LockedException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -35,7 +33,7 @@ public class EmailService {
             message.setText("Your verification code is: " + otp);
             mailSender.send(message);
         } catch (MailSendException e){
-            throw new RuntimeException("Invalid email address.");
+            throw new BusinessException(ExceptionCode.INVALID_EMAIL);
         }
     }
 
@@ -49,14 +47,14 @@ public class EmailService {
             message.setText(body + otp);
             mailSender.send(message);
         } catch (MailSendException e){
-            throw new RuntimeException("Invalid email address.");
+            throw new BusinessException(ExceptionCode.INVALID_EMAIL);
         }
     }
 
     @Async
     public void validateEmailOtp(String email){
         if (isEmailVerified(email))
-            throw new AlreadyVerifiedException("Email address already verified.");
+            throw new BusinessException(ExceptionCode.EMAIL_ALREADY_VERIFIED);
 
         String otp = otpService.generateOtp(email);
 
@@ -67,7 +65,7 @@ public class EmailService {
     @Async
     public void validateNewDevice(String email, String os, String deviceName, String ip){
         if (!isEmailVerified(email))
-            throw new LockedException("Email address already verified.");
+            throw new BusinessException(ExceptionCode.EMAIL_NOT_VERIFIED);
 
         String otp = otpService.generateOtp(email);
         var location = locationService.getLocation(ip);

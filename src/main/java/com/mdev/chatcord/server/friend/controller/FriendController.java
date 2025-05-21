@@ -1,20 +1,14 @@
 package com.mdev.chatcord.server.friend.controller;
 
-import com.mdev.chatcord.server.exception.AlreadyRegisteredException;
 import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
 import com.mdev.chatcord.server.friend.dto.FriendDTO;
 import com.mdev.chatcord.server.friend.service.FriendService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.LockedException;
-import org.springframework.security.config.annotation.AlreadyBuiltException;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

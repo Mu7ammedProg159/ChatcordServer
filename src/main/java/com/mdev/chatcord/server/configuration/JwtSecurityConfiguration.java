@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.configuration;
 
+import com.mdev.chatcord.server.authentication.configuration.AccountAccessAuthenticationProvider;
 import com.mdev.chatcord.server.token.service.TokenService;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWKSet;
@@ -61,8 +62,8 @@ public class JwtSecurityConfiguration {
                     .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                     // <— updated
             )
-            .userDetailsService(userDetailsService)
-            .authenticationProvider(authenticationProvider());
+                .userDetailsService(userDetailsService)
+                .authenticationProvider(authenticationProvider());
         return http.build();
     }
 
@@ -120,7 +121,7 @@ public class JwtSecurityConfiguration {
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider(){
-        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
+        AccountAccessAuthenticationProvider authenticationProvider = new AccountAccessAuthenticationProvider();
         authenticationProvider.setUserDetailsService(userDetailsService);
         authenticationProvider.setPasswordEncoder(passwordEncoder());
         return authenticationProvider;
