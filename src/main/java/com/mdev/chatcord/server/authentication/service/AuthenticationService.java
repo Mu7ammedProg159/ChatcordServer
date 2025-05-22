@@ -74,6 +74,8 @@ public class AuthenticationService {
 
         } catch (BadCredentialsException ex){
             throw new BusinessException(ExceptionCode.INVALID_CREDENTIALS);
+        } catch (Exception e) {
+            throw new BusinessException(ExceptionCode.EMAIL_NOT_VERIFIED);
         }
 
         String refreshToken = null;
@@ -101,7 +103,8 @@ public class AuthenticationService {
             // If this true that means it is the first time logging. EXCEPT if he logged out from all devices.
             if (deviceSessionService.getDevicesForUser(email).isEmpty()){
 
-                log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}] from Country: {} and City: {}.",
+                log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}]"
+                                + " from Country: {} and City: {}.",
                         user.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
                         deviceDto.getOS_VERSION(), location.getCountry(), location.getCity());
 

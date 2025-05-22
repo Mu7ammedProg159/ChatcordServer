@@ -14,7 +14,7 @@ public class GlobalExceptionHandleResolver {
 
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<String> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
         String errorMessage = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -26,7 +26,7 @@ public class GlobalExceptionHandleResolver {
                 "errorCode", "1001", // custom code for all validation problems
                 "errorMessage", errorMessage
         );
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body.toString());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
 
