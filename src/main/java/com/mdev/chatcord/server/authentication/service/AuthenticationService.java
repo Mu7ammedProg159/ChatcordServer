@@ -74,17 +74,13 @@ public class AuthenticationService {
 
         } catch (BadCredentialsException ex){
             throw new BusinessException(ExceptionCode.INVALID_CREDENTIALS);
-        } catch (Exception e) {
+        } catch (LockedException e) {
+            if (otpService.canResendOtp(email) <= 0)
+                emailService.validateEmailOtp(email);
             throw new BusinessException(ExceptionCode.EMAIL_NOT_VERIFIED);
         }
 
         String refreshToken = null;
-
-        if (!user.isEmailVerified()){
-            if (otpService.canResendOtp(email) <= 0)
-                emailService.validateEmailOtp(email);
-            throw new BusinessException(ExceptionCode.EMAIL_NOT_VERIFIED, "Please verify your email.");
-        }
 
         if (userAgent != null && userAgent.equalsIgnoreCase("ReactorNetty/1.2.4")){
             deviceDto.setOS(userAgent);

@@ -41,4 +41,12 @@ public class Chat {
     private Set<Message> pinnedMessages = new HashSet<>();
 
     private LocalDateTime createdAt;
+
+    public Chat(ChatType type, List<ChatMember> members, List<Message> messages, Set<Message> pinnedMessages, LocalDateTime createdAt) {
+        this.type = type;
+        this.members = members;
+        this.messages = messages;
+        this.pinnedMessages = pinnedMessages;
+        this.createdAt = createdAt;
+    }
 }

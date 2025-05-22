@@ -1,10 +1,10 @@
 package com.mdev.chatcord.server.message.dto;
 
+import com.mdev.chatcord.server.chat.ChatType;
 import com.mdev.chatcord.server.message.service.EMessageStatus;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.mdev.chatcord.server.user.dto.Profile;
+import com.mdev.chatcord.server.user.dto.ProfileDTO;
+import lombok.*;
 
 import java.io.Serializable;
 
@@ -12,22 +12,16 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Getter
 @Setter
+@ToString
 public class MessageDTO implements Serializable {
 
-    private String username;
-    private String message;
-    private String profileImageURL;
+    private ChatType chatType;
+    private String content;
+    private String sender; // uuid
+    private String receiver; // Can be username#tag or guildId << this is currently is the group.
     private long timestamp;
+    private boolean isEdited;
     private EMessageStatus messageStatus;
 
-    @Override
-    public String toString() {
-        return "MessageDTO{" +
-                "username='" + username + '\'' +
-                ", message='" + message + '\'' +
-                ", profileImageURL='" + profileImageURL + '\'' +
-                ", timestamp='" + timestamp + '\'' +
-                ", MessageStatus='" + messageStatus + '\'' +
-                '}';
-    }
+
 }

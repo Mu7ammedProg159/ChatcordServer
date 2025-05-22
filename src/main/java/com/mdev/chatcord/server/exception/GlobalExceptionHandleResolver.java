@@ -1,17 +1,34 @@
 package com.mdev.chatcord.server.exception;
 
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.net.ConnectException;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandleResolver {
 
+    @ExceptionHandler(RedisConnectionFailureException.class)
+    public ResponseEntity<Map<String, Object>> handleRedisConnectionFailureException(RedisConnectionFailureException exception){
+        return errorResponse("9001", "Connection Refused: Server is down for maintenance.",
+                HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    @ExceptionHandler(ConnectException.class)
+    public ResponseEntity<Map<String, Object>> handleConnect(ConnectException ex) {
+        return errorResponse("8001", "A backend service is unavailable. Try again later.", HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleUnknown(Exception ex) {
+        return errorResponse("0000", "Unexpected server error.", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
@@ -28,7 +45,6 @@ public class GlobalExceptionHandleResolver {
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
-
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Map<String, Object>> handleBusiness(BusinessException ex) {
@@ -51,6 +67,14 @@ public class GlobalExceptionHandleResolver {
             case CANNOT_ADD_SELF -> HttpStatus.METHOD_NOT_ALLOWED;
             default -> HttpStatus.BAD_REQUEST;
         };
+    }
+
+    private ResponseEntity<Map<String, Object>> errorResponse(String code, String message, HttpStatus status) {
+        Map<String, Object> body = Map.of(
+                "errorCode", code,
+                "errorMessage", message
+        );
+        return ResponseEntity.status(status).body(body);
     }
 
 }

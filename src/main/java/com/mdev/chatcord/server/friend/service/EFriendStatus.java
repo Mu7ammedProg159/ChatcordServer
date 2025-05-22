@@ -4,5 +4,6 @@ public enum EFriendStatus {
     PENDING,
     REQUESTED,
     ACCEPTED,
-    DECLINED
+    DECLINED,
+    BLOCKED
 }

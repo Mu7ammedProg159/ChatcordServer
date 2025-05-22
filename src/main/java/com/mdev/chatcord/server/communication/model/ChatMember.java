@@ -42,4 +42,14 @@ public class ChatMember {
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private ChatRole role; // Role will be Null in 1-on-1 Private chats.
 
+    public ChatMember(User user, Chat chat, Set<Message> starredMessages, int pings, boolean muted, LocalDateTime lastSeenAt, String nickname, ChatRole role) {
+        this.user = user;
+        this.chat = chat;
+        this.starredMessages = starredMessages;
+        this.pings = pings;
+        this.muted = muted;
+        this.lastSeenAt = lastSeenAt;
+        this.nickname = nickname;
+        this.role = role;
+    }
 }

@@ -1,5 +1,16 @@
 package com.mdev.chatcord.server.friend.service;
 
+import com.mdev.chatcord.server.chat.Chat;
+import com.mdev.chatcord.server.chat.ChatRepository;
+import com.mdev.chatcord.server.chat.ChatType;
+import com.mdev.chatcord.server.chat.dto.ChatDTO;
+import com.mdev.chatcord.server.chat.dto.UnreadStatus;
+import com.mdev.chatcord.server.communication.dto.ChatMemberDTO;
+import com.mdev.chatcord.server.communication.model.*;
+import com.mdev.chatcord.server.communication.repository.ChatMemberRepository;
+import com.mdev.chatcord.server.communication.repository.ChatRoleRepository;
+import com.mdev.chatcord.server.communication.repository.PrivilegeRepository;
+import com.mdev.chatcord.server.communication.service.PrivilegeType;
 import com.mdev.chatcord.server.exception.*;
 import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
 import com.mdev.chatcord.server.friend.dto.FriendDTO;
@@ -26,6 +37,10 @@ public class FriendService {
     private final ProfileRepository profileRepository;
     private final UserStatusRepository userStatusRepository;
     private final FriendRepository friendRepository;
+    private final ChatMemberRepository chatMemberRepository;
+    private final ChatRepository chatRepository;
+    private final ChatRoleRepository chatRoleRepository;
+    private final PrivilegeRepository privilegeRepository;
 
     public FriendDTO addFriend(@Valid String uuid, String friendUsername, String friendTag){
 
@@ -42,8 +57,14 @@ public class FriendService {
            throw new BusinessException(ExceptionCode.EMAIL_NOT_VERIFIED,
                    "Please verify your email address to use this feature."); // Not now ..
 
-        Optional<UserProfile> userProfile = profileRepository.findByUserId(friend.getId());
-        Optional<UserStatus> userStatus = userStatusRepository.findByUserId(friend.getId());
+        UserProfile ownerProfile = profileRepository.findByUserId(owner.getId()).orElseThrow(()
+                -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+        UserStatus ownerStatus = userStatusRepository.findByUserId(owner.getId()).orElseThrow(()
+                -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+        UserProfile friendProfile = profileRepository.findByUserId(friend.getId()).orElseThrow(()
+                -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+        UserStatus friendStatus = userStatusRepository.findByUserId(friend.getId()).orElseThrow(()
+                -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
         if (friendRepository.existsByOwnerIdAndFriendId(owner.getId(), friend.getId())){
             throw new BusinessException(ExceptionCode.FRIEND_ALREADY_ADDED, "You already added "
@@ -54,12 +75,65 @@ public class FriendService {
             Friend friendship = new Friend(owner, friend, EFriendStatus.PENDING, LocalDateTime.now());
 
             FriendDTO friendDTO = new FriendDTO(owner.getUsername(), owner.getTag(), friend.getUsername(), friend.getTag(),
-                    userProfile.get().getProfilePictureUrl(), friendship.getFriendStatus(), userStatus.get().getStatus(),
+                    friendProfile.getProfilePictureUrl(), friendship.getFriendStatus(), friendStatus.getStatus(),
                     friendship.getAddedAt());
 
             friendRepository.save(friendship);
+
+            Chat friendChat = new Chat();
+            friendChat.setType(ChatType.PRIVATE);
+            friendChat.setCreatedAt(LocalDateTime.now());
+            //chatRepository.save(friendChat);
+
+            ChatMember ownerChatMember = createDefaultChatMember(owner);
+            ChatMember friendChatMember = createDefaultChatMember(friend);
+
+            List<ChatMember> chatMembers = List.of(ownerChatMember, friendChatMember);
+            chatMemberRepository.saveAll(chatMembers);
+
+            owner.setParticipation(chatMembers);
+            friend.setParticipation(chatMembers);
+            userRepository.save(owner);
+            userRepository.save(friend);
+
+            friendChat.setMembers(chatMembers);
+            chatRepository.save(friendChat);
+
+            ChatMemberDTO ownerChatMemberDTO = new ChatMemberDTO(owner.getUsername(), owner.getTag(), ownerProfile.getProfilePictureUrl(), ownerChatMember.getRole());
+            ChatMemberDTO friendChatMemberDTO = new ChatMemberDTO(owner.getUsername(), owner.getTag(), ownerProfile.getProfilePictureUrl(), ownerChatMember.getRole());
+
+            ChatDTO chatDTO = ChatDTO.builder()
+                    .chatType(friendChat.getType())
+                    .relationship(friendship.getFriendStatus())
+                    .chatMembersDto(List.of(ownerChatMemberDTO, friendChatMemberDTO))
+                    .unreadStatus(new UnreadStatus(0, false, false))
+                    .build();
             return friendDTO;
         }
+    }
+
+    private ChatMember createDefaultChatMember(User chatUser) {
+        ChatMember chatMember = new ChatMember();
+        chatMember.setUser(chatUser);
+        chatMember.setMuted(false);
+
+        // Default privileges for a member in a chat
+        Set<Privilege> privilege = Set.of(
+                new Privilege(PrivilegeType.SEND_MESSAGE),
+                new Privilege(PrivilegeType.EDIT_MESSAGE),
+                new Privilege(PrivilegeType.DELETE_MESSAGE),
+                new Privilege(PrivilegeType.REACT_MESSAGE)
+        );
+
+        privilegeRepository.saveAll(privilege);
+
+        ChatRole chatRole = new ChatRole("Member", privilege);
+        chatRoleRepository.save(chatRole);
+
+        chatMember.setRole(chatRole);
+        chatMember.setPings(0);
+
+        return chatMember;
     }
 
     public List<FriendContactDTO> getAllFriends(String uuid) {

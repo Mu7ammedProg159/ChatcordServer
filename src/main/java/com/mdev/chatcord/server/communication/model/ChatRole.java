@@ -1,10 +1,7 @@
 package com.mdev.chatcord.server.communication.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Set;
 
@@ -23,4 +20,8 @@ public class ChatRole {
     @ManyToMany
     private Set<Privilege> privileges; // What you can do with this Role ?
 
+    public ChatRole(String name, Set<Privilege> privileges) {
+        this.name = name;
+        this.privileges = privileges;
+    }
 }
