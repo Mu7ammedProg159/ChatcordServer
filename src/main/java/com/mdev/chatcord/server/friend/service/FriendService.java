@@ -1,16 +1,9 @@
 package com.mdev.chatcord.server.friend.service;
 
-import com.mdev.chatcord.server.chat.Chat;
-import com.mdev.chatcord.server.chat.ChatRepository;
-import com.mdev.chatcord.server.chat.ChatType;
 import com.mdev.chatcord.server.chat.dto.ChatDTO;
-import com.mdev.chatcord.server.chat.dto.UnreadStatus;
-import com.mdev.chatcord.server.communication.dto.ChatMemberDTO;
-import com.mdev.chatcord.server.communication.model.*;
-import com.mdev.chatcord.server.communication.repository.ChatMemberRepository;
-import com.mdev.chatcord.server.communication.repository.ChatRoleRepository;
-import com.mdev.chatcord.server.communication.repository.PrivilegeRepository;
-import com.mdev.chatcord.server.communication.service.PrivilegeType;
+import com.mdev.chatcord.server.chat.dto.PrivateChatDTO;
+import com.mdev.chatcord.server.chat.dto.PrivateChatParticipants;
+import com.mdev.chatcord.server.chat.service.PrivateChatService;
 import com.mdev.chatcord.server.exception.*;
 import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
 import com.mdev.chatcord.server.friend.dto.FriendDTO;
@@ -37,12 +30,11 @@ public class FriendService {
     private final ProfileRepository profileRepository;
     private final UserStatusRepository userStatusRepository;
     private final FriendRepository friendRepository;
-    private final ChatMemberRepository chatMemberRepository;
-    private final ChatRepository chatRepository;
-    private final ChatRoleRepository chatRoleRepository;
-    private final PrivilegeRepository privilegeRepository;
 
-    public FriendDTO addFriend(@Valid String uuid, String friendUsername, String friendTag){
+    private final PrivateChatService privateChatService;
+
+
+    public PrivateChatDTO addFriend(@Valid String uuid, String friendUsername, String friendTag){
 
         User owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
                 () -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
@@ -80,60 +72,13 @@ public class FriendService {
 
             friendRepository.save(friendship);
 
-            Chat friendChat = new Chat();
-            friendChat.setType(ChatType.PRIVATE);
-            friendChat.setCreatedAt(LocalDateTime.now());
-            //chatRepository.save(friendChat);
+            PrivateChatParticipants participants = new PrivateChatParticipants(
+                    owner, friend, ownerProfile, friendProfile, friendship);
 
-            ChatMember ownerChatMember = createDefaultChatMember(owner);
-            ChatMember friendChatMember = createDefaultChatMember(friend);
+            ChatDTO chatDTO = privateChatService.createPrivateChat(participants);
 
-            List<ChatMember> chatMembers = List.of(ownerChatMember, friendChatMember);
-            chatMemberRepository.saveAll(chatMembers);
-
-            owner.setParticipation(chatMembers);
-            friend.setParticipation(chatMembers);
-            userRepository.save(owner);
-            userRepository.save(friend);
-
-            friendChat.setMembers(chatMembers);
-            chatRepository.save(friendChat);
-
-            ChatMemberDTO ownerChatMemberDTO = new ChatMemberDTO(owner.getUsername(), owner.getTag(), ownerProfile.getProfilePictureUrl(), ownerChatMember.getRole());
-            ChatMemberDTO friendChatMemberDTO = new ChatMemberDTO(owner.getUsername(), owner.getTag(), ownerProfile.getProfilePictureUrl(), ownerChatMember.getRole());
-
-            ChatDTO chatDTO = ChatDTO.builder()
-                    .chatType(friendChat.getType())
-                    .relationship(friendship.getFriendStatus())
-                    .chatMembersDto(List.of(ownerChatMemberDTO, friendChatMemberDTO))
-                    .unreadStatus(new UnreadStatus(0, false, false))
-                    .build();
-            return friendDTO;
+            return new PrivateChatDTO(friendDTO, chatDTO);
         }
-    }
-
-    private ChatMember createDefaultChatMember(User chatUser) {
-        ChatMember chatMember = new ChatMember();
-        chatMember.setUser(chatUser);
-        chatMember.setMuted(false);
-
-        // Default privileges for a member in a chat
-        Set<Privilege> privilege = Set.of(
-                new Privilege(PrivilegeType.SEND_MESSAGE),
-                new Privilege(PrivilegeType.EDIT_MESSAGE),
-                new Privilege(PrivilegeType.DELETE_MESSAGE),
-                new Privilege(PrivilegeType.REACT_MESSAGE)
-        );
-
-        privilegeRepository.saveAll(privilege);
-
-        ChatRole chatRole = new ChatRole("Member", privilege);
-        chatRoleRepository.save(chatRole);
-
-        chatMember.setRole(chatRole);
-        chatMember.setPings(0);
-
-        return chatMember;
     }
 
     public List<FriendContactDTO> getAllFriends(String uuid) {

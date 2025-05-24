@@ -1,9 +1,10 @@
 package com.mdev.chatcord.server.device.controller;
 
-import com.mdev.chatcord.server.authentication.dto.JwtRequest;
+import com.mdev.chatcord.server.device.dto.DeviceVerificationDTO;
 import com.mdev.chatcord.server.device.model.DeviceSession;
 import com.mdev.chatcord.server.device.service.DeviceSessionService;
 import com.mdev.chatcord.server.email.service.OtpService;
+import com.mdev.chatcord.server.token.service.TokenService;
 import com.mdev.chatcord.server.user.model.User;
 import com.mdev.chatcord.server.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class DeviceSessionController {
 
     private final DeviceSessionService deviceSessionService;
     private final OtpService otpService;
+    private final TokenService tokenService;
     private final UserRepository userRepository;
 
     @GetMapping
@@ -33,17 +35,19 @@ public class DeviceSessionController {
     }
 
     @PostMapping("/device/verify")
-    public ResponseEntity<?> verifyDevice(JwtRequest jwtRequest, String otp){
-        if(otpService.validateOtp(jwtRequest.getEmail(), otp)) {
+    public ResponseEntity<?> verifyDevice(@RequestBody DeviceVerificationDTO deviceDTO){
+        if(otpService.validateOtp(deviceDTO.getEmail(), deviceDTO.getOtp())) {
 
-            User user = userRepository.findByEmail(jwtRequest.getEmail());
+            User user = userRepository.findByEmail(deviceDTO.getEmail());
 
             user.setEmailVerified(true);
             user.setAccountNonLocked(true);
 
             userRepository.save(user);
 
-            return ResponseEntity.ok("Email Verified Successfully");
+            deviceSessionService.saveSession(user, deviceDTO.getDeviceDto());
+
+            return ResponseEntity.ok("Device Verified Successfully");
         }
         else {
             return ResponseEntity.badRequest().body("Invalid or Expired OTP");

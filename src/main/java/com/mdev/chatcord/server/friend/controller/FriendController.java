@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.friend.controller;
 
+import com.mdev.chatcord.server.chat.dto.PrivateChatDTO;
 import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
 import com.mdev.chatcord.server.friend.dto.FriendDTO;
 import com.mdev.chatcord.server.friend.service.FriendService;
@@ -30,8 +31,8 @@ public class FriendController {
     @GetMapping("/add/{username}/{tag}")
     public ResponseEntity<?> addFriend(@AuthenticationPrincipal Jwt jwt, @PathVariable String username, @PathVariable String tag){
 
-        FriendDTO friendDTO = friendService.addFriend(jwt.getClaimAsString("uuid"), username, tag);
-        return ResponseEntity.ok(friendDTO);
+        PrivateChatDTO privateChatDTO = friendService.addFriend(jwt.getClaimAsString("uuid"), username, tag);
+        return ResponseEntity.ok(privateChatDTO);
     }
 
     @GetMapping("/{username}/{tag}")

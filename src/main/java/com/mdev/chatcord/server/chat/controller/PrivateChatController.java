@@ -2,7 +2,9 @@ package com.mdev.chatcord.server.chat.controller;
 
 import com.mdev.chatcord.server.chat.Chat;
 import com.mdev.chatcord.server.chat.ChatRepository;
+import com.mdev.chatcord.server.chat.ChatType;
 import com.mdev.chatcord.server.chat.dto.ChatDTO;
+import com.mdev.chatcord.server.chat.dto.PrivateChatDTO;
 import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.friend.repository.FriendRepository;
@@ -13,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -29,15 +30,19 @@ public class PrivateChatController {
     private final FriendRepository friendRepository;
     private final ChatRepository chatRepository;
 
-    @GetMapping("/private")
-    public ResponseEntity<?> joinPrivateChat(@AuthenticationPrincipal Jwt jwt, @ModelAttribute ChatDTO chatDTO){
-        User sender = userRepository.findByUuid(UUID.fromString(jwt.getClaimAsString("uuid")))
-                .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
-
-        User receiver = userRepository.findByUsernameAndTag(chatDTO.getUsername(), chatDTO.getTag()).orElseThrow(()
-                -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
-
-        Chat chat = new Chat(sender, );
-    }
+//    @PostMapping("/private")
+//    public ResponseEntity<?> joinPrivateChat(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag, PrivateChatDTO privateChatDTO){
+//        User sender = userRepository.findByUuid(UUID.fromString(jwt.getClaimAsString("uuid")))
+//                .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+//
+//        User receiver = userRepository.findByUsernameAndTag(privateChatDTO.getFriendDTO().getUsername(),
+//                privateChatDTO.getFriendDTO().getTag()).orElseThrow(()
+//                -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
+//
+//        Chat chat = chatRepository.findPrivateChatBetweenUsers(sender.getId(), receiver.getId(), ChatType.PRIVATE)
+//                .orElseThrow(() -> new BusinessException(ExceptionCode.FRIENDSHIP_NOT_FOUND));
+//
+//        return ResponseEntity.ok()
+//    }
 
 }

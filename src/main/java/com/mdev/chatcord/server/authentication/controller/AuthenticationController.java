@@ -1,8 +1,6 @@
 package com.mdev.chatcord.server.authentication.controller;
 
-import com.mdev.chatcord.server.authentication.dto.RefreshDto;
 import com.mdev.chatcord.server.device.service.DeviceSessionService;
-import com.mdev.chatcord.server.device.service.EPlatform;
 import com.mdev.chatcord.server.device.service.RequestMetadataUtil;
 import com.mdev.chatcord.server.email.service.EmailService;
 import com.mdev.chatcord.server.email.service.OtpService;

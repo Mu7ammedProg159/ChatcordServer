@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server;
+package com.mdev.chatcord.server.authentication.controller;
 
 import com.mdev.chatcord.server.token.service.TokenService;
 import com.mdev.chatcord.server.user.repository.UserRepository;

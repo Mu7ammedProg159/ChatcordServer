@@ -27,7 +27,7 @@ public class GlobalExceptionHandleResolver {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleUnknown(Exception ex) {
-        return errorResponse("0000", "Unexpected server error.", HttpStatus.INTERNAL_SERVER_ERROR);
+        return errorResponse("0000", ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
