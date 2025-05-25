@@ -15,20 +15,30 @@ import com.mdev.chatcord.server.communication.repository.ChatMemberRepository;
 import com.mdev.chatcord.server.communication.repository.ChatRoleRepository;
 import com.mdev.chatcord.server.communication.repository.PrivilegeRepository;
 import com.mdev.chatcord.server.communication.service.PrivilegeType;
+import com.mdev.chatcord.server.exception.BusinessException;
+import com.mdev.chatcord.server.exception.ExceptionCode;
+import com.mdev.chatcord.server.message.dto.MessageDTO;
+import com.mdev.chatcord.server.message.model.Message;
 import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.UserProfile;
+import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import com.mdev.chatcord.server.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PrivateChatService {
     
     private final UserRepository userRepository;
+    private final ProfileRepository userProfileRepository;
     private final ChatRepository chatRepository;
     private final ChatMemberRepository chatMemberRepository;
     private final ChatRoleRepository chatRoleRepository;
@@ -56,18 +66,51 @@ public class PrivateChatService {
 
         ChatMemberDTO senderChatMemberDTO = new ChatMemberDTO(participants.sender().getUsername(),
                 participants.sender().getTag(), participants.senderProfile().getProfilePictureUrl(),
-                new ChatRoleDTO(senderChatMember.getRole().getName()));
+                senderChatMember.getRole().getName());
 
         ChatMemberDTO receiverChatMemberDTO = new ChatMemberDTO(participants.receiver().getUsername(),
                 participants.receiver().getTag(), participants.receiverProfile().getProfilePictureUrl(),
-                new ChatRoleDTO(receiverChatMember.getRole().getName()));
+                receiverChatMember.getRole().getName());
 
         return ChatDTO.builder()
                 .chatType(receiverChat.getType())
-                .relationship(participants.friendship().getFriendStatus())
                 .chatMembersDto(List.of(senderChatMemberDTO, receiverChatMemberDTO))
                 .unreadStatus(new UnreadStatus(0, false, false))
                 .build();
+    }
+
+    public ChatDTO retrieveConversation(String uuid, String receiverUsername, String receiverTag){
+
+        User sender = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+        User receiver = userRepository.findByUsernameAndTag(receiverUsername, receiverTag).orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
+
+        Chat chat = chatRepository.findPrivateChatBetweenUsers(
+                sender.getId(), receiver.getId(), ChatType.PRIVATE
+        ).orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
+
+        List<ChatMember> members = chat.getMembers();
+        List<ChatMemberDTO> membersDTO = null;
+
+        for (ChatMember member: members){
+            UserProfile userProfile = userProfileRepository.findByUserId(member.getUser().getId()).orElseThrow(()
+                    -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+            membersDTO.add(new ChatMemberDTO(member.getUser().getUsername(), member.getUser().getTag(),
+                    userProfile.getProfilePictureUrl(), member.getRole().getName()));
+        }
+
+        Message lastMessage = chat.getMessages().stream().sorted(Comparator.comparing(Message::getSentAt).reversed()).findFirst().orElseThrow();
+
+        ChatDTO chatDTO = ChatDTO.builder()
+                .chatType(chat.getType())
+                .chatMembersDto(membersDTO)
+                .lastMessage(lastMessage.getMessage())
+                .createdAt(chat.getCreatedAt())
+                .lastMessageAt(lastMessage.getSentAt())
+                .lastMessageSender(lastMessage.getSender().getUsername())
+                .unreadStatus(new UnreadStatus(0, false, false))
+                .build();
+
+        return chatDTO;
     }
 
     private ChatMember createDefaultChatMember(User chatUser) {

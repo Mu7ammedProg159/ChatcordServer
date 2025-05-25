@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.chat.dto;
 
+import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
 import com.mdev.chatcord.server.friend.dto.FriendDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,6 +12,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PrivateChatDTO {
-    FriendDTO friendDTO;
+    FriendContactDTO friendContactDTO;
     ChatDTO chatDTO;
 }

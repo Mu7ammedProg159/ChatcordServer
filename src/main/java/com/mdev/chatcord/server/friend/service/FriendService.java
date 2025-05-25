@@ -66,10 +66,6 @@ public class FriendService {
 
             Friend friendship = new Friend(owner, friend, EFriendStatus.PENDING, LocalDateTime.now());
 
-            FriendDTO friendDTO = new FriendDTO(owner.getUsername(), owner.getTag(), friend.getUsername(), friend.getTag(),
-                    friendProfile.getProfilePictureUrl(), friendship.getFriendStatus(), friendStatus.getStatus(),
-                    friendship.getAddedAt());
-
             friendRepository.save(friendship);
 
             PrivateChatParticipants participants = new PrivateChatParticipants(
@@ -77,51 +73,72 @@ public class FriendService {
 
             ChatDTO chatDTO = privateChatService.createPrivateChat(participants);
 
-            return new PrivateChatDTO(friendDTO, chatDTO);
+            FriendContactDTO friendContactDTO = new FriendContactDTO(friend.getUsername(),
+                    friend.getTag(), friendProfile.getProfilePictureUrl(), friendship.getFriendStatus());
+
+            return new PrivateChatDTO(friendContactDTO, chatDTO);
         }
     }
 
-    public List<FriendContactDTO> getAllFriends(String uuid) {
+    public List<PrivateChatDTO> getAllFriends(String uuid) {
         User owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
                 () -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
         // In-Future if database became bigger overtime, must use pagination (+300 Records).
         List<Friend> friendships = friendRepository.findAllByOwnerId(owner.getId(), Pageable.unpaged()).getContent();
         List<FriendContactDTO> friendDTOList = new ArrayList<>();
+        List<PrivateChatDTO> privateChatDTOList = new ArrayList<>();
 
         for (Friend friend : friendships) {
             UserProfile friendProfile = profileRepository.findByUserId(friend.getFriend().getId()).orElseThrow(
                     () -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND, "User with ID " +
                             friend.getId() + " not found"));;
             //PrivateChat friendChat = pr
-            friendDTOList.add(new FriendContactDTO(friend.getFriend().getUsername(), friend.getFriend().getTag(),
-                    friendProfile.getProfilePictureUrl(), null, null, friend.getFriendStatus()));
+            privateChatDTOList.add(new PrivateChatDTO(
+                    new FriendContactDTO(
+                            friend.getFriend().getUsername(), friend.getFriend().getTag(),
+                            friendProfile.getProfilePictureUrl(), friend.getFriendStatus()
+                    ),
+                    privateChatService.retrieveConversation(
+                            uuid, friend.getFriend().getUsername(),
+                            friend.getFriend().getTag())
+                    )
+            );
         }
-        return friendDTOList;
+
+        return privateChatDTOList;
     }
 
-    public List<FriendContactDTO> getAllPendingFriends(String uuid) {
+    public List<PrivateChatDTO> getAllPendingFriends(String uuid) {
         User currentUser = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
                 () -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
         // In-Future if database became bigger overtime, must use pagination (+300 Records).
         List<Friend> pendingFriendships = friendRepository.findAllByFriendStatusAndFriendId(EFriendStatus.PENDING,
                 currentUser.getId(), Pageable.unpaged()).getContent();
-        List<FriendContactDTO> friendDTOList = new ArrayList<>();
+
+        List<PrivateChatDTO> privateChatDTOList = new ArrayList<>();
 
         for (Friend friend : pendingFriendships) {
             UserProfile friendProfile = profileRepository.findByUserId(friend.getOwner().getId()).orElseThrow(
                     () -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND, "User with ID " + friend.getId()
                             + " not found"));;
             //PrivateChat friendChat = pr
-            friendDTOList.add(new FriendContactDTO(friend.getOwner().getUsername(), friend.getOwner().getTag(),
-                    friendProfile.getProfilePictureUrl(), null, null,
-                    EFriendStatus.REQUESTED));
+            privateChatDTOList.add(new PrivateChatDTO(
+                            new FriendContactDTO(
+                                    friend.getFriend().getUsername(), friend.getFriend().getTag(),
+                                    friendProfile.getProfilePictureUrl(), EFriendStatus.PENDING
+                            ),
+                            privateChatService.retrieveConversation(
+                                    uuid, friend.getFriend().getUsername(),
+                                    friend.getFriend().getTag())
+                    )
+            );
         }
-        return friendDTOList;
+        return privateChatDTOList;
     }
 
-    public FriendContactDTO getFriend(String uuid, String username, String tag) {
+    public PrivateChatDTO getFriend(String uuid, String username, String tag) {
         User owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
                 () -> new BusinessException(ExceptionCode.UUID_NOT_FOUND));
 
@@ -141,13 +158,21 @@ public class FriendService {
                     + friendship.getFriend().getUsername() + " and tag: "
                     + friendship.getFriend().getTag() + " not exists."); //Check this
 
-        FriendContactDTO friendDTO;
+        FriendContactDTO friendContactDTO;
 
         UserProfile friendProfile = profileRepository.findByUserId(friendship.getFriend().getId()).orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
         //PrivateChat friendChat = pr
-        friendDTO = new FriendContactDTO(friendship.getFriend().getUsername(), friendship.getFriend().getTag(),
-                friendProfile.getProfilePictureUrl(), null, null, friendship.getFriendStatus());
+        friendContactDTO = new FriendContactDTO(friendship.getFriend().getUsername(), friendship.getFriend().getTag(),
+                friendProfile.getProfilePictureUrl(), friendship.getFriendStatus());
 
-        return friendDTO;
+        ChatDTO chatDTO = privateChatService.retrieveConversation(uuid, username, tag);
+
+        return new PrivateChatDTO(friendContactDTO, chatDTO);
+    }
+
+    public void removeFriend(String uuid, String username, String tag){
+        User owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+        User friend = userRepository.findByUsernameAndTag(username, tag).orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
+        friendRepository.deleteByOwnerIdAndFriendId(owner.getId(), friend.getId());
     }
 }

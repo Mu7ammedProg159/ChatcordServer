@@ -11,5 +11,5 @@ public class ChatMemberDTO {
     private String username;
     private String tag;
     private String avatarUrl;
-    private ChatRoleDTO role; // ADMIN, MOD, MEMBER, etc.
+    private String role; // ADMIN, MOD, MEMBER, etc.
 }

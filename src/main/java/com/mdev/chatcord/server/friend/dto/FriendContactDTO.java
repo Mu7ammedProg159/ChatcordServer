@@ -14,10 +14,6 @@ public class FriendContactDTO {
     private String name;
     private String tag;
     private String profilePictureURL;
-
-    // checks the private chat if exists with the id of this friend and fetch.
-    private String lastMessageSent;
-    private LocalDateTime LastMessageSendDate;
     private EFriendStatus friendStatus;
 
 }

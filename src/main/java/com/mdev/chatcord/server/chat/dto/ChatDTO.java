@@ -26,6 +26,4 @@ public class ChatDTO {
     private List<ChatMemberDTO> chatMembersDto;
     private List<MessageDTO> messages;
     private UnreadStatus unreadStatus;
-    private EFriendStatus relationship;
-
 }
