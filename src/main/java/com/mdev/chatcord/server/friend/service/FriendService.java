@@ -1,9 +1,17 @@
 package com.mdev.chatcord.server.friend.service;
 
+import com.mdev.chatcord.server.chat.Chat;
+import com.mdev.chatcord.server.chat.ChatRepository;
+import com.mdev.chatcord.server.chat.ChatType;
 import com.mdev.chatcord.server.chat.dto.ChatDTO;
 import com.mdev.chatcord.server.chat.dto.PrivateChatDTO;
 import com.mdev.chatcord.server.chat.dto.PrivateChatParticipants;
 import com.mdev.chatcord.server.chat.service.PrivateChatService;
+import com.mdev.chatcord.server.communication.model.ChatMember;
+import com.mdev.chatcord.server.communication.model.ChatRole;
+import com.mdev.chatcord.server.communication.model.Privilege;
+import com.mdev.chatcord.server.communication.repository.ChatMemberRepository;
+import com.mdev.chatcord.server.communication.repository.ChatRoleRepository;
 import com.mdev.chatcord.server.exception.*;
 import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
 import com.mdev.chatcord.server.friend.dto.FriendDTO;
@@ -31,6 +39,9 @@ public class FriendService {
     private final UserStatusRepository userStatusRepository;
     private final FriendRepository friendRepository;
 
+    private final ChatRepository chatRepository;
+    private final ChatRoleRepository chatRoleRepository;
+    private final ChatMemberRepository chatMemberRepository;
     private final PrivateChatService privateChatService;
 
 
@@ -173,6 +184,15 @@ public class FriendService {
     public void removeFriend(String uuid, String username, String tag){
         User owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
         User friend = userRepository.findByUsernameAndTag(username, tag).orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
-        friendRepository.deleteByOwnerIdAndFriendId(owner.getId(), friend.getId());
+
+        Chat chat = chatRepository.findPrivateChatBetweenUsers(owner.getId(), friend.getId(), ChatType.PRIVATE).orElseThrow();
+        ChatMember chatMember = chatMemberRepository.findByChatId(chat.getId()).orElseThrow();
+        ChatRole chatRole = chatRoleRepository.findById(chatMember.getRole().getId()).orElseThrow();
+
+        friendRepository.deleteFriendship(owner.getId(), friend.getId());
+        chatRoleRepository.delete(chatRole);
+        chatMemberRepository.delete(chatMember);
+        chatRepository.delete(chat);
+
     }
 }

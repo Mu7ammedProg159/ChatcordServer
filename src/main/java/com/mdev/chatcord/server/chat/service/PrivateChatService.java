@@ -48,16 +48,19 @@ public class PrivateChatService {
         Chat receiverChat = new Chat();
         receiverChat.setType(ChatType.PRIVATE);
         receiverChat.setCreatedAt(LocalDateTime.now());
-        //chatRepository.save(receiverChat);
+        chatRepository.save(receiverChat);
 
-        ChatMember senderChatMember = createDefaultChatMember(participants.sender());
-        ChatMember receiverChatMember = createDefaultChatMember(participants.receiver());
+        ChatRole chatRole = createRole("Member", receiverChat);
+
+        ChatMember senderChatMember = createDefaultChatMember(participants.sender(), chatRole);
+        ChatMember receiverChatMember = createDefaultChatMember(participants.receiver(), chatRole);
 
         List<ChatMember> chatMembers = List.of(senderChatMember, receiverChatMember);
         chatMemberRepository.saveAll(chatMembers);
 
-        participants.sender().setParticipation(chatMembers);
-        participants.receiver().setParticipation(chatMembers);
+        participants.sender().getParticipation().add(senderChatMember);
+        participants.receiver().getParticipation().add(receiverChatMember);
+
         userRepository.save(participants.sender());
         userRepository.save(participants.receiver());
 
@@ -113,27 +116,32 @@ public class PrivateChatService {
         return chatDTO;
     }
 
-    private ChatMember createDefaultChatMember(User chatUser) {
+    private ChatMember createDefaultChatMember(User chatUser, ChatRole chatRole) {
         ChatMember chatMember = new ChatMember();
         chatMember.setUser(chatUser);
         chatMember.setMuted(false);
-
-        // Default privileges for a member in a chat
-        Set<Privilege> privilege = Set.of(
-                new Privilege(PrivilegeType.SEND_MESSAGE),
-                new Privilege(PrivilegeType.EDIT_MESSAGE),
-                new Privilege(PrivilegeType.DELETE_MESSAGE),
-                new Privilege(PrivilegeType.REACT_MESSAGE)
-        );
-
-        privilegeRepository.saveAll(privilege);
-
-        ChatRole chatRole = new ChatRole("Member", privilege);
-        chatRoleRepository.save(chatRole);
 
         chatMember.setRole(chatRole);
         chatMember.setPings(0);
 
         return chatMember;
+    }
+
+    public ChatRole createRole(String roleName, Chat chat){
+
+        if (!chatRoleRepository.existsByNameAndChat_Id(roleName, chat.getId())){
+            Set<Privilege> privilege = Set.of(
+                    new Privilege(PrivilegeType.SEND_MESSAGE),
+                    new Privilege(PrivilegeType.EDIT_MESSAGE),
+                    new Privilege(PrivilegeType.DELETE_MESSAGE),
+                    new Privilege(PrivilegeType.REACT_MESSAGE)
+            );
+            privilegeRepository.saveAll(privilege);
+            ChatRole chatRole = new ChatRole(roleName, privilege, chat);
+            chatRoleRepository.save(chatRole);
+            return chatRole;
+        }
+
+        return chatRoleRepository.findByNameAndChat_Id(roleName, chat.getId()).orElseThrow();
     }
 }

@@ -30,7 +30,7 @@ public class User {
     @Column(unique = true, nullable = false)
     private String tag = generateTag();
 
-    @OneToMany(mappedBy = "user")
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<ChatMember> participation = new ArrayList<>(); // To whom chat you belong ?
 
     @ElementCollection(fetch = FetchType.EAGER)
