@@ -3,8 +3,12 @@ package com.mdev.chatcord.server.device.service;
 import com.mdev.chatcord.server.device.dto.DeviceDto;
 import com.mdev.chatcord.server.device.model.DeviceSession;
 import com.mdev.chatcord.server.device.repository.DeviceSessionRepository;
+import com.mdev.chatcord.server.exception.BusinessException;
+import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.user.model.Account;
-import com.mdev.chatcord.server.user.repository.UserRepository;
+import com.mdev.chatcord.server.user.model.Profile;
+import com.mdev.chatcord.server.user.repository.AccountRepository;
+import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,18 +20,19 @@ import java.util.List;
 public class DeviceSessionServiceImpl implements DeviceSessionService{
 
     private final DeviceSessionRepository deviceSessionRepository;
-    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
+    private final ProfileRepository profileRepository;
 
     @Override
-    public boolean existsForUser(Account user, String deviceId) {
-        return deviceSessionRepository.existsByUserAndDeviceId(user, deviceId);
+    public boolean existsForUser(Profile profile, String deviceId) {
+        return deviceSessionRepository.existsByProfileAndDeviceId(profile, deviceId);
     }
 
     @Override
-    public void saveSession(Account user, String deviceId, String deviceName, String os, String osVersion, String ip) {
-        if (!existsForUser(user, deviceId)){
+    public void saveSession(Profile profile, String deviceId, String deviceName, String os, String osVersion, String ip) {
+        if (!existsForUser(profile, deviceId)){
             DeviceSession session = DeviceSession.builder()
-                    .user(user)
+                    .profile(profile)
                     .deviceId(deviceId)
                     .deviceName(deviceName)
                     .os(os)
@@ -39,10 +44,10 @@ public class DeviceSessionServiceImpl implements DeviceSessionService{
     }
 
     @Override
-    public void saveSession(Account user, DeviceDto deviceDto) {
-        if (!existsForUser(user, deviceDto.getDEVICE_ID())){
+    public void saveSession(Profile profile, DeviceDto deviceDto) {
+        if (!existsForUser(profile, deviceDto.getDEVICE_ID())){
             DeviceSession deviceSession = DeviceSession.builder()
-                    .user(user)
+                    .profile(profile)
                     .deviceId(deviceDto.getDEVICE_ID())
                     .deviceName(deviceDto.getDEVICE_NAME())
                     .os(deviceDto.getOS())
@@ -56,18 +61,19 @@ public class DeviceSessionServiceImpl implements DeviceSessionService{
     @Override
     public List<DeviceSession> getDevicesForUser(String subject) {
 
-        Account user = userRepository.findByEmail(subject);
+        Account account = accountRepository.findByEmail(subject);
 
         return deviceSessionRepository.findAll()
                 .stream()
-                .filter(d -> d.getUser().equals(user))
+                .filter(d -> d.getProfile().equals(account))
                 .toList();
     }
 
     @Override
     @Transactional
     public void removeDevice(String subject, String deviceId) {
-        Account user = userRepository.findByEmail(subject);
-        deviceSessionRepository.deleteByUserAndDeviceId(user, deviceId);
+        Profile profile = profileRepository.findByAccountEmail(subject)
+                .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+        deviceSessionRepository.deleteByProfileAndDeviceId(profile, deviceId);
     }
 }

@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.authentication.service;
 
+import com.mdev.chatcord.server.authentication.dto.AuthenticationResponse;
 import com.mdev.chatcord.server.device.dto.DeviceDto;
 import com.mdev.chatcord.server.device.service.DeviceSessionService;
 import com.mdev.chatcord.server.device.service.IpLocationService;
@@ -9,9 +10,10 @@ import com.mdev.chatcord.server.exception.*;
 import com.mdev.chatcord.server.redis.service.RefreshTokenStore;
 import com.mdev.chatcord.server.token.service.TokenService;
 import com.mdev.chatcord.server.user.model.Account;
+import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.model.UserStatus;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
-import com.mdev.chatcord.server.user.repository.UserRepository;
+import com.mdev.chatcord.server.user.repository.AccountRepository;
 import com.mdev.chatcord.server.user.repository.UserStatusRepository;
 import com.mdev.chatcord.server.user.service.EUserState;
 import com.mdev.chatcord.server.user.service.UserService;
@@ -25,10 +27,12 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
@@ -43,7 +47,7 @@ public class AuthenticationService {
     private final EmailService emailService;
     private final UserService userService;
 
-    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
     private final UserStatusRepository userStatusRepository;
     private final ProfileRepository profileRepository;
 
@@ -55,18 +59,21 @@ public class AuthenticationService {
     private final RefreshTokenStore refreshTokenStore;
     private final IpLocationService locationService;
 
+    @Transactional(rollbackFor = Exception.class)
     public List<String> login(@Valid @Email(message = "Enter a valid email address.") String email, String password, DeviceDto deviceDto, String userAgent,  String IP_ADDRESS){
 
         if (!emailService.isEmailRegistered(email))
             throw new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND);
 
-        @Null(message = "Email or password is invalid.")
-        Account user = userRepository.findByEmail(email);
+        Profile profile = profileRepository.findByAccountEmail(email)
+                .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+
+        Set<ERoles> rolesByEmail = accountRepository.findRolesByEmail(email);
 
         Authentication auth;
         try {
             auth = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(email, password, mapRolesToAuthorities(user))
+                    new UsernamePasswordAuthenticationToken(email, password, mapRolesToAuthorities(rolesByEmail))
             );
 
         } catch (BadCredentialsException ex){
@@ -85,23 +92,23 @@ public class AuthenticationService {
         }
 
         var location = locationService.getLocation(IP_ADDRESS);
-        if (!deviceSessionService.existsForUser(user, deviceDto.getDEVICE_ID())) {
+        if (!deviceSessionService.existsForUser(profile, deviceDto.getDEVICE_ID())) {
             log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}]" +
                             " with IP ADDRESS: {}.",
-                    user.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
+                    profile.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
                     deviceDto.getOS_VERSION(), IP_ADDRESS);
 
-            refreshToken = tokenService.generateRefreshToken(user, deviceDto.getDEVICE_ID());
+            refreshToken = tokenService.generateRefreshToken(email, profile.getTag(), rolesByEmail, deviceDto.getDEVICE_ID());
 
             // If this true that means it is the first time logging. EXCEPT if he logged out from all devices.
             if (deviceSessionService.getDevicesForUser(email).isEmpty()){
 
                 log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}]"
                                 + " from Country: {} and City: {}.",
-                        user.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
+                        account.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
                         deviceDto.getOS_VERSION(), location.getCountry(), location.getCity());
 
-                deviceSessionService.saveSession(user, deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(),
+                deviceSessionService.saveSession(profile, deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(),
                         deviceDto.getOS(), deviceDto.getOS_VERSION(), IP_ADDRESS);
             }
             else {
@@ -114,11 +121,11 @@ public class AuthenticationService {
             }
         }
 
-        String accessToken = tokenService.generateAccessTokenByUser(user, deviceDto.getDEVICE_ID());
+        String accessToken = tokenService.generateAccessTokenByUser(account, deviceDto.getDEVICE_ID());
 
 //        userRepository.save(user);
 
-        UserStatus userStatus = userStatusRepository.findByUserId(user.getId()).orElseThrow();
+        UserStatus userStatus = userStatusRepository.findByUserId(account.getId()).orElseThrow();
         userStatus.setStatus(EUserState.ONLINE);
 
         userStatusRepository.save(userStatus);
@@ -126,19 +133,19 @@ public class AuthenticationService {
         log.info("User with this Email Address: [{}] Logged In Successfully. His UUID is: ", auth.getName());
         log.info("User with this Email Address: [{}] Has these Authorities.", auth.getAuthorities());
 
-        return Arrays.asList(accessToken, refreshToken, String.valueOf(user.getUuid()));
+        return new AuthenticationResponse(accessToken, refreshToken, profile);
     }
 
-    public List<String> refreshAccessToken(Jwt jwt, Authentication authentication, String deviceId) {
-        Account user = userRepository.findByEmail(jwt.getSubject());
+    public List<String> refreshAccessToken(@AuthenticationPrincipal Jwt jwt, String deviceId) {
+        Account account = accountRepository.findByEmail(jwt.getSubject());
             try {
                 if (tokenService.isRefreshTokenValid(jwt.getSubject(), deviceId,
                         jwt.getTokenValue())){
                     return Arrays.asList(tokenService.generateAccessToken(jwt, deviceId));
                 }
             } catch (ExpiredRefreshTokenException e) {
-                return Arrays.asList(tokenService.generateAccessTokenByUser(user, deviceId),
-                        tokenService.generateRefreshToken(user, deviceId));
+                return Arrays.asList(tokenService.generateAccessTokenByUser(account, deviceId),
+                        tokenService.generateRefreshToken(account, deviceId));
             }
         throw new RuntimeException("INTERNAL SERVER ERROR: SOMETHING WENT WRONG REFRESHING TOKEN");
     }
@@ -150,10 +157,10 @@ public class AuthenticationService {
             throw new BusinessException(ExceptionCode.ACCOUNT_ALREADY_REGISTERED);
 
         @Null(message = "BAD REQUEST: Something went wrong when adding new friend.")
-        Account user = new Account(email, new BCryptPasswordEncoder().encode(password), username);
-        user.getRoles().add(ERoles.USER);
+        Account account = new Account(email, new BCryptPasswordEncoder().encode(password));
+        account.getRoles().add(ERoles.USER);
 
-        userService.createUser(user);
+        userService.createUser(account, username);
 
     }
 
@@ -166,16 +173,16 @@ public class AuthenticationService {
                              String username, ERoles role){
 
         @Null(message = "BAD REQUEST: Something went wrong when adding new friend.")
-        Account user = new Account(email, password, username);
-        user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
-        user.getRoles().add(role);
+        Account account = new Account(email, password);
+        account.setPassword(new BCryptPasswordEncoder().encode(account.getPassword()));
+        account.getRoles().add(role);
 
-        userService.createUser(user);
+        userService.createUser(account, username);
 
     }
 
-    private Set<SimpleGrantedAuthority> mapRolesToAuthorities(Account user) {
-        return user.getRoles().stream()
+    private Set<SimpleGrantedAuthority> mapRolesToAuthorities(Set<ERoles> userRoles) {
+        return userRoles.stream()
                 .map(roles -> new SimpleGrantedAuthority(roles.name()))
                 .collect(Collectors.toSet());
     }

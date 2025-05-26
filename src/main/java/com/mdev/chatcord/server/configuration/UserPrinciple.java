@@ -11,41 +11,37 @@ import java.util.stream.Collectors;
 
 public class UserPrinciple implements UserDetails {
 
-    private final Account user;
+    private final Account account;
 
-    public UserPrinciple(Account user){
-        this.user = user;
+    public UserPrinciple(Account account){
+        this.account = account;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return user.getRoles().stream()
+        return account.getRoles().stream()
                 .map(roles -> new SimpleGrantedAuthority("ROLE_" + roles.name()))
                 .collect(Collectors.toSet());
     }
 
-    public UUID getUUID(){
-        return user.getUuid();
-    }
-
     @Override
     public String getPassword() {
-        return user.getPassword();
+        return account.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return user.getEmail();
+        return account.getEmail();
     }
 
     @Override
     public boolean isAccountNonExpired() {
-        return user.isAccountNonExpired();
+        return account.isAccountNonExpired();
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return user.isAccountNonLocked();
+        return account.isAccountNonLocked();
     }
 
     @Override
@@ -55,6 +51,6 @@ public class UserPrinciple implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return user.isActive();
+        return account.isActive();
     }
 }

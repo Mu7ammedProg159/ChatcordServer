@@ -11,10 +11,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @Getter
 @Setter
-public class Profile {
+public class ProfileDetails {
 
     private UUID uuid;
-    private String email;
     private String username;
     private String tag;
     private String status;

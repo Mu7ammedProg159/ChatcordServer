@@ -1,7 +1,7 @@
 package com.mdev.chatcord.server.authentication.controller;
 
-import com.mdev.chatcord.server.authentication.dto.JwtRequest;
-import com.mdev.chatcord.server.user.dto.Profile;
+import com.mdev.chatcord.server.authentication.dto.AuthenticationRequest;
+import com.mdev.chatcord.server.user.dto.ProfileDetails;
 import com.mdev.chatcord.server.authentication.service.AuthenticationService;
 import com.mdev.chatcord.server.authentication.service.ERoles;
 import com.mdev.chatcord.server.email.service.EmailService;
@@ -47,19 +47,19 @@ public class AdminController {
         if (!uuid.equals(jwt.getClaimAsString("uuid"))) return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body("The UUID for the Authenticated Token does not match with the UUID provided.");
 
-        Profile profileDTO = userService.getUserProfileByUUID(uuid);
+        ProfileDetails profileDetailsDTO = userService.getUserProfile(uuid);
 
-        return ResponseEntity.ok(profileDTO);
+        return ResponseEntity.ok(profileDetailsDTO);
     }
 
     @PostMapping("/register")
     //@PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> registerAdmin(@RequestBody JwtRequest jwtRequest){
+    public ResponseEntity<?> registerAdmin(@RequestBody AuthenticationRequest authenticationRequest){
         @Email
-        String email = jwtRequest.getEmail();
+        String email = authenticationRequest.getEmail();
 
         emailService.validateEmailOtp(email);
-        authenticationService.registerUser(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getUsername(), ERoles.ADMIN);
+        authenticationService.registerUser(authenticationRequest.getEmail(), authenticationRequest.getPassword(), authenticationRequest.getUsername(), ERoles.ADMIN);
 
         return ResponseEntity.ok("User Registered Successfully, " +
                 "Please Verify your Email Address to avoid losing your account.");

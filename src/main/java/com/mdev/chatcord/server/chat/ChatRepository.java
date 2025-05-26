@@ -20,10 +20,10 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
     WHERE c.type = :type
       AND SIZE(c.members) = 2
       AND EXISTS (
-        SELECT m1 FROM ChatMember m1 WHERE m1.chat = c AND m1.user.id = :senderId
+        SELECT m1 FROM ChatMember m1 WHERE m1.chat = c AND m1.account.id = :senderId
       )
       AND EXISTS (
-        SELECT m2 FROM ChatMember m2 WHERE m2.chat = c AND m2.user.id = :friendId
+        SELECT m2 FROM ChatMember m2 WHERE m2.chat = c AND m2.account.id = :friendId
       )
    """)
     Optional<Chat> findPrivateChatBetweenUsers(@Param("senderId") Long senderId,

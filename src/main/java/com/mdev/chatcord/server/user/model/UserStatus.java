@@ -18,14 +18,14 @@ public class UserStatus {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Account user;
-
     @Enumerated(EnumType.STRING)
     private EUserState status;
 
-    public UserStatus(Account user, EUserState status) {
-        this.user = user;
+    @OneToOne
+    @MapsId
+    private Profile profile;
+
+    public UserStatus(EUserState status) {
         this.status = status;
     }
 }

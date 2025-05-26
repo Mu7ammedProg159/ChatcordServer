@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.token.service;
 
+import com.mdev.chatcord.server.authentication.service.ERoles;
 import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.redis.service.RefreshTokenStore;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -64,35 +66,35 @@ public class TokenService {
 //        refreshTokenStore.save(authentication.getName(), deviceId, token, REFRESH_TOKEN_TTL_SECONDS.toSeconds());
 //        return token;
 //    }
-    public String generateAccessTokenByUser(Account user, String deviceId) {
+    public String generateAccessTokenByUser(Account account, String deviceId) {
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(ACCESS_TOKEN_TTL_SECONDS.toSeconds()))
-                .subject(user.getEmail())
+                .subject(account.getEmail())
                 .claim("device-id", deviceId)
-                .claim("uuid", user.getUuid())
-                .claim("scope", user.getRoles().stream().map(Enum::name).collect(Collectors.joining(" ")))
+                .claim("uuid", account.getUuid())
+                .claim("scope", account.getRoles().stream().map(Enum::name).collect(Collectors.joining(" ")))
                 .build();
 
         return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
     }
 
-    public String generateRefreshToken(Account user, String deviceId) {
+    public String generateRefreshToken(String email, String uuid, Set<ERoles> roles, String deviceId) {
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(REFRESH_TOKEN_TTL_SECONDS.toSeconds()))
-                .subject(user.getEmail())
+                .subject(email)
                 .claim("device-id", deviceId)
-                .claim("uuid", user.getUuid())
-                .claim("scope", user.getRoles().stream().map(Enum::name).collect(Collectors.joining(" ")))
+                .claim("uuid", uuid)
+                .claim("scope", roles.stream().map(Enum::name).collect(Collectors.joining(" ")))
                 .build();
 
         String token = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
-        refreshTokenStore.save(user.getEmail(), deviceId, token, REFRESH_TOKEN_TTL_SECONDS.toSeconds());
+        refreshTokenStore.save(account.getEmail(), deviceId, token, REFRESH_TOKEN_TTL_SECONDS.toSeconds());
         return token;
     }
 

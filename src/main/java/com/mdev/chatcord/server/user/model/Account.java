@@ -1,7 +1,7 @@
 package com.mdev.chatcord.server.user.model;
 
+import com.mdev.chatcord.server.BaseEntity;
 import com.mdev.chatcord.server.authentication.service.ERoles;
-import com.mdev.chatcord.server.communication.model.ChatMember;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,30 +13,19 @@ import java.util.*;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Account {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
-    private Long id;
-
-    @Column(unique = true, nullable = false, updatable = false)
-    private UUID uuid = UUID.randomUUID();
-
-    private String email;
-    private String Password;
-
-    private String username;
+public class Account extends BaseEntity {
 
     @Column(unique = true, nullable = false)
-    private String tag = generateTag();
+    private String email;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    private List<ChatMember> participation = new ArrayList<>(); // To whom chat you belong ?
+    private String Password;
+
+    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL)
+    private Profile profile;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     private Set<ERoles> roles = new HashSet<>(Set.of(ERoles.USER));
-
 
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
@@ -45,10 +34,9 @@ public class Account {
     private boolean isAccountNonLocked = false;
     private boolean isActive = true;
 
-    public Account(String email, String password, String username) {
+    public Account(String email, String password) {
         this.email = email;
         Password = password;
-        this.username = username;
     }
 
     public boolean isAccountNonLocked() {
@@ -56,11 +44,6 @@ public class Account {
         return isAccountNonLocked;
     }
 
-    public String generateTag(){
-        Random random = new Random();
-        int id = random.nextInt(9000) + 1000;
-        return String.valueOf(id);
-    }
 }
 
 

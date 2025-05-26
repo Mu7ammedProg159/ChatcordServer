@@ -2,8 +2,6 @@ package com.mdev.chatcord.server.message.dto;
 
 import com.mdev.chatcord.server.chat.ChatType;
 import com.mdev.chatcord.server.message.service.EMessageStatus;
-import com.mdev.chatcord.server.user.dto.Profile;
-import com.mdev.chatcord.server.user.dto.ProfileDTO;
 import lombok.*;
 
 import java.io.Serializable;

@@ -1,7 +1,7 @@
 package com.mdev.chatcord.server.authentication.controller;
 
 import com.mdev.chatcord.server.token.service.TokenService;
-import com.mdev.chatcord.server.user.repository.UserRepository;
+import com.mdev.chatcord.server.user.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class TestController {
 
-    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
     private final TokenService tokenService;
 
     @GetMapping("/hello")

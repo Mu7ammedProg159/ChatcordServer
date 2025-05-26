@@ -16,28 +16,28 @@ public class JwtService {
 
     private final JwtEncoder jwtEncoder;
 
-    public String generateToken(Account user){
+    public String generateToken(Account account){
         var claims = JwtClaimsSet.builder()
                 .issuer("http://localhost:8080")
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(60 * 30))
-                .subject(user.getEmail())
-                .claim("uuid", user.getUuid())
-                .claim("scope", user.getRoles().stream().map(Enum::name).collect(Collectors.joining(" ")))
+                .subject(account.getEmail())
+                .claim("uuid", account.getUuid())
+                .claim("scope", account.getRoles().stream().map(Enum::name).collect(Collectors.joining(" ")))
                 .build();
 
         return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
 
     }
 
-    public String generateToken(Authentication authentication, Account user){
+    public String generateToken(Authentication authentication, Account account){
 
         var claims = JwtClaimsSet.builder()
                 .issuer("http://localhost:8080")
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(60 * 30))
                 .subject(authentication.getName())
-                .claim("uuid", user.getUuid())
+                .claim("uuid", account.getUuid())
                 .claim("scope", createScope(authentication))
                 .build();
 

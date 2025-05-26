@@ -6,7 +6,7 @@ import com.mdev.chatcord.server.device.service.DeviceSessionService;
 import com.mdev.chatcord.server.email.service.OtpService;
 import com.mdev.chatcord.server.token.service.TokenService;
 import com.mdev.chatcord.server.user.model.Account;
-import com.mdev.chatcord.server.user.repository.UserRepository;
+import com.mdev.chatcord.server.user.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +27,7 @@ public class DeviceSessionController {
     private final DeviceSessionService deviceSessionService;
     private final OtpService otpService;
     private final TokenService tokenService;
-    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
 
     @GetMapping
     public ResponseEntity<List<DeviceSession>> getMyDevices(@AuthenticationPrincipal Jwt jwt){
@@ -38,14 +38,14 @@ public class DeviceSessionController {
     public ResponseEntity<?> verifyDevice(@RequestBody DeviceVerificationDTO deviceDTO){
         if(otpService.validateOtp(deviceDTO.getEmail(), deviceDTO.getOtp())) {
 
-            Account user = userRepository.findByEmail(deviceDTO.getEmail());
+            Account account = accountRepository.findByEmail(deviceDTO.getEmail());
 
-            user.setEmailVerified(true);
-            user.setAccountNonLocked(true);
+            account.setEmailVerified(true);
+            account.setAccountNonLocked(true);
 
-            userRepository.save(user);
+            accountRepository.save(account);
 
-            deviceSessionService.saveSession(user, deviceDTO.getDeviceDto());
+            deviceSessionService.saveSession(account, deviceDTO.getDeviceDto());
 
             return ResponseEntity.ok("Device Verified Successfully");
         }

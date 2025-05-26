@@ -1,7 +1,7 @@
 package com.mdev.chatcord.server.configuration;
 
 import com.mdev.chatcord.server.user.model.Account;
-import com.mdev.chatcord.server.user.repository.UserRepository;
+import com.mdev.chatcord.server.user.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,12 +14,12 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserPrincipleService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Account user = userRepository.findByEmail(email);
-        return new UserPrinciple(user);
+        Account account = accountRepository.findByEmail(email);
+        return new UserPrinciple(account);
     }
 }

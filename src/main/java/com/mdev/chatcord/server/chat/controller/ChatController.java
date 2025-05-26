@@ -3,7 +3,7 @@ package com.mdev.chatcord.server.chat.controller;
 import com.mdev.chatcord.server.chat.Chat;
 import com.mdev.chatcord.server.message.dto.MessageDTO;
 import com.mdev.chatcord.server.message.repository.MessageRepository;
-import com.mdev.chatcord.server.user.repository.UserRepository;
+import com.mdev.chatcord.server.user.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -15,7 +15,7 @@ public class ChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final MessageRepository messageRepository;
-    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
 
     @MessageMapping("/chat.send")
     public void sendMessage(MessageDTO message){

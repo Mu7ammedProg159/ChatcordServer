@@ -4,7 +4,7 @@ import com.mdev.chatcord.server.device.service.DeviceSessionService;
 import com.mdev.chatcord.server.device.service.RequestMetadataUtil;
 import com.mdev.chatcord.server.email.service.EmailService;
 import com.mdev.chatcord.server.email.service.OtpService;
-import com.mdev.chatcord.server.authentication.dto.JwtRequest;
+import com.mdev.chatcord.server.authentication.dto.AuthenticationRequest;
 import com.mdev.chatcord.server.authentication.service.AuthenticationService;
 import com.mdev.chatcord.server.token.service.TokenService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,25 +42,25 @@ public class AuthenticationController {
     private final TokenService tokenService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody JwtRequest jwtRequest, HttpServletRequest httpHeaders) {
+    public ResponseEntity<?> login(@Valid @RequestBody AuthenticationRequest authenticationRequest, HttpServletRequest httpHeaders) {
 
         String ip = RequestMetadataUtil.retrieveClientIp(httpHeaders);
         String userAgent = RequestMetadataUtil.extractUserAgent(httpHeaders);
 
-        return ResponseEntity.ok(authenticationService.login(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getDeviceDto(), userAgent, ip));
+        return ResponseEntity.ok(authenticationService.login(authenticationRequest.getEmail(), authenticationRequest.getPassword(), authenticationRequest.getDeviceDto(), userAgent, ip));
     }
 
     @PostMapping("/refresh-key")
     public ResponseEntity<?> refreshToken(@AuthenticationPrincipal Jwt jwt, Authentication authentication, String deviceId){
-        return ResponseEntity.ok(authenticationService.refreshAccessToken(jwt, authentication, deviceId));
+        return ResponseEntity.ok(authenticationService.refreshAccessToken(jwt, deviceId));
     }
 
     @PostMapping("/register")
     @Transactional(rollbackFor = MailSendException.class)
-    public ResponseEntity<?> register(@Valid @RequestBody JwtRequest jwtRequest) {
+    public ResponseEntity<?> register(@Valid @RequestBody AuthenticationRequest authenticationRequest) {
         @Email
-        String email = jwtRequest.getEmail();
-        authenticationService.registerUser(jwtRequest.getEmail(), jwtRequest.getPassword(), jwtRequest.getUsername());
+        String email = authenticationRequest.getEmail();
+        authenticationService.registerUser(authenticationRequest.getEmail(), authenticationRequest.getPassword(), authenticationRequest.getUsername());
 
         emailService.validateEmailOtp(email);
 

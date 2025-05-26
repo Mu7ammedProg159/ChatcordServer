@@ -3,7 +3,7 @@ package com.mdev.chatcord.server.chat.controller;
 import com.mdev.chatcord.server.chat.ChatRepository;
 import com.mdev.chatcord.server.friend.repository.FriendRepository;
 import com.mdev.chatcord.server.message.repository.MessageRepository;
-import com.mdev.chatcord.server.user.repository.UserRepository;
+import com.mdev.chatcord.server.user.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @EnableMethodSecurity
 public class PrivateChatController {
 
-    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
     private final MessageRepository messageRepository;
     private final FriendRepository friendRepository;
     private final ChatRepository chatRepository;

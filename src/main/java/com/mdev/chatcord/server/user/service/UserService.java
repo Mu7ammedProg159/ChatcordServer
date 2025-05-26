@@ -1,15 +1,14 @@
 package com.mdev.chatcord.server.user.service;
 
-import com.mdev.chatcord.server.user.dto.Profile;
+import com.mdev.chatcord.server.exception.BusinessException;
+import com.mdev.chatcord.server.exception.ExceptionCode;
+import com.mdev.chatcord.server.user.dto.ProfileDetails;
 import com.mdev.chatcord.server.user.model.Account;
-import com.mdev.chatcord.server.user.model.UserProfile;
+import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.model.UserStatus;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
-import com.mdev.chatcord.server.user.repository.UserRepository;
+import com.mdev.chatcord.server.user.repository.AccountRepository;
 import com.mdev.chatcord.server.user.repository.UserStatusRepository;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Null;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -18,8 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.authentication.AuthenticationManager;
 
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -29,7 +28,7 @@ import java.util.*;
 @Slf4j
 public class UserService {
 
-    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
     private final UserStatusRepository userStatusRepository;
     private final ProfileRepository profileRepository;
 
@@ -37,56 +36,32 @@ public class UserService {
 
     private final String default_pfp = "/images/default_pfp.png";
 
-    public void createUser(Account user){
+    @Transactional(rollbackFor = Exception.class)
+    public void createUser(Account account, String username){
 
-        @Null(message = "INTERNAL SERVER ERROR: There is no user status in this account.")
-        UserStatus userStatus = new UserStatus(user, EUserState.OFFLINE);
+        Profile profile = new Profile(username, null, default_pfp, null);
 
-        @Null(message = "INTERNAL SERVER ERROR: There is no profile in this account.")
-        UserProfile userProfile = new UserProfile(user, null, default_pfp, null);
+        profile.setUserStatus(new UserStatus(EUserState.OFFLINE));
+        account.setProfile(profile);
 
-        userRepository.save(user);
-        userStatusRepository.save(userStatus);
-        profileRepository.save(userProfile);
+        accountRepository.save(account);
     }
 
-    public Profile getUserProfile(@Valid @Email(message = "Enter a valid email address.") String email){
+    @Transactional(rollbackFor = Exception.class)
+    public ProfileDetails getUserProfile(String uuid){
 
-        @Null(message = "Account with this email address does not exists.")
-        Account user = userRepository.findByEmail(email);
+        Profile profile = profileRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+                () -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
-        @Null(message = "INTERNAL SERVER ERROR: There is no user status in this account.")
-        Optional<UserProfile> userProfile = profileRepository.findByUserId(user.getId());
-
-        @Null(message = "INTERNAL SERVER ERROR: There is no profile in this account.")
-        Optional<UserStatus> userStatus = userStatusRepository.findByUserId(user.getId());
-
-        return new Profile(user.getUuid(), user.getEmail(), user.getUsername(), user.getTag(),
-                userStatus.get().getStatus().name(), userProfile.get().getProfilePictureUrl(),
-                userProfile.get().getAboutMe(), userProfile.get().getQuote());
-
+        return new ProfileDetails(profile.getUuid(), profile.getUsername(), profile.getTag(),
+                profile.getUserStatus().getStatus().name(), profile.getAvatarUrl(),
+                profile.getAboutMe(), profile.getQuote());
     }
 
-    public Profile getUserProfileByUUID(@Valid String uuid){
-
-        @Null(message = "Account with this UUID does not exists.")
-        Account user = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new UsernameNotFoundException(""));
-
-        @Null(message = "INTERNAL SERVER ERROR: There is no user status in this account.")
-        Optional<UserProfile> userProfile = profileRepository.findByUserId(user.getId());
-
-        @Null(message = "INTERNAL SERVER ERROR: There is no profile in this account.")
-        Optional<UserStatus> userStatus = userStatusRepository.findByUserId(user.getId());
-
-        return new Profile(user.getUuid(), user.getEmail(), user.getUsername(), user.getTag(),
-                userStatus.get().getStatus().name(), userProfile.get().getProfilePictureUrl(),
-                userProfile.get().getAboutMe(), userProfile.get().getQuote());
-
-    }
-
+    @Transactional(rollbackFor = Exception.class)
     public Page<UUID> getAllUUID(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
-        return userRepository.findAllByUuid(pageable);
+        return profileRepository.findAllByUuid(pageable);
     }
 
 }

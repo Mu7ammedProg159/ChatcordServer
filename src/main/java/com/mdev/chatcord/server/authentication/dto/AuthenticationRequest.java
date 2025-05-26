@@ -7,13 +7,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
-public class JwtRequest {
+public class AuthenticationRequest {
 
     @Email(message = "Email address does not exists.")
     private String email;
@@ -21,7 +19,7 @@ public class JwtRequest {
     private String username;
     private DeviceDto deviceDto;
 
-    public JwtRequest(@Email(message = "Email address does not exists.") String email, String password) {
+    public AuthenticationRequest(@Email(message = "Email address does not exists.") String email, String password) {
         this.email = email;
         this.password = password;
     }

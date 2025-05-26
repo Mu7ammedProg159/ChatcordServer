@@ -3,7 +3,7 @@ package com.mdev.chatcord.server.email.service;
 import com.mdev.chatcord.server.device.service.IpLocationService;
 import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
-import com.mdev.chatcord.server.user.repository.UserRepository;
+import com.mdev.chatcord.server.user.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.MailSendException;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class EmailService {
 
-    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
     private final OtpService otpService;
     private final IpLocationService locationService;
 
@@ -82,14 +82,14 @@ public class EmailService {
     }
 
     public boolean isEmailRegistered(String email){
-        return userRepository.existsByEmail(email);
+        return accountRepository.existsByEmail(email);
     }
 
     public boolean isEmailVerified(String email){
-        return userRepository.findByEmail(email).isEmailVerified();
+        return accountRepository.findByEmail(email).isEmailVerified();
     }
 
     public void deleteAccount(String email){
-        userRepository.deleteByEmail(email);
+        accountRepository.deleteByEmail(email);
     }
 }

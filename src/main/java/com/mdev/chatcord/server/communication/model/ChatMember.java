@@ -2,7 +2,7 @@ package com.mdev.chatcord.server.communication.model;
 
 import com.mdev.chatcord.server.chat.Chat;
 import com.mdev.chatcord.server.message.model.Message;
-import com.mdev.chatcord.server.user.model.Account;
+import com.mdev.chatcord.server.user.model.Profile;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,7 +20,7 @@ public class ChatMember {
     private Long id;
 
     @ManyToOne
-    private Account user; // Who the member of a chat ?
+    private Profile profile; // Who the member of a chat ?
 
     @ManyToOne
     private Chat chat; // Where the chat is ?
@@ -42,8 +42,8 @@ public class ChatMember {
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private ChatRole role; // Role will be Null in 1-on-1 Private chats.
 
-    public ChatMember(Account user, Chat chat, Set<Message> starredMessages, int pings, boolean muted, LocalDateTime lastSeenAt, String nickname, ChatRole role) {
-        this.user = user;
+    public ChatMember(Profile user, Chat chat, Set<Message> starredMessages, int pings, boolean muted, LocalDateTime lastSeenAt, String nickname, ChatRole role) {
+        this.profile = user;
         this.chat = chat;
         this.starredMessages = starredMessages;
         this.pings = pings;

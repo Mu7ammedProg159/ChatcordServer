@@ -2,7 +2,7 @@ package com.mdev.chatcord.server.email.controller;
 
 import com.mdev.chatcord.server.email.dto.OtpRequest;
 import com.mdev.chatcord.server.user.model.Account;
-import com.mdev.chatcord.server.user.repository.UserRepository;
+import com.mdev.chatcord.server.user.repository.AccountRepository;
 import com.mdev.chatcord.server.email.service.EmailService;
 import com.mdev.chatcord.server.email.service.OtpService;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth/email")
 public class EmailController {
 
-    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
     private final EmailService emailService;
     private final OtpService otpService;
 
@@ -28,13 +28,13 @@ public class EmailController {
     public ResponseEntity<String> verifyEmail(@RequestBody OtpRequest otpRequest){
         if(otpService.validateOtp(otpRequest.email(), otpRequest.otp())) {
 
-            Account user = userRepository.findByEmail(otpRequest.email());
-            if (user.isEmailVerified()) return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("The Email Address is already verified.");
+            Account account = accountRepository.findByEmail(otpRequest.email());
+            if (account.isEmailVerified()) return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("The Email Address is already verified.");
 
-            user.setEmailVerified(true);
-            user.setAccountNonLocked(true);
+            account.setEmailVerified(true);
+            account.setAccountNonLocked(true);
 
-            userRepository.save(user);
+            accountRepository.save(account);
 
             return ResponseEntity.ok("Email Verified Successfully");
         }
