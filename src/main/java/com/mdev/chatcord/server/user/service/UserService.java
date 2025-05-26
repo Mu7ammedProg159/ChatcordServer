@@ -1,7 +1,7 @@
 package com.mdev.chatcord.server.user.service;
 
 import com.mdev.chatcord.server.user.dto.Profile;
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.model.UserProfile;
 import com.mdev.chatcord.server.user.model.UserStatus;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
@@ -37,7 +37,7 @@ public class UserService {
 
     private final String default_pfp = "/images/default_pfp.png";
 
-    public void createUser(User user){
+    public void createUser(Account user){
 
         @Null(message = "INTERNAL SERVER ERROR: There is no user status in this account.")
         UserStatus userStatus = new UserStatus(user, EUserState.OFFLINE);
@@ -53,7 +53,7 @@ public class UserService {
     public Profile getUserProfile(@Valid @Email(message = "Enter a valid email address.") String email){
 
         @Null(message = "Account with this email address does not exists.")
-        User user = userRepository.findByEmail(email);
+        Account user = userRepository.findByEmail(email);
 
         @Null(message = "INTERNAL SERVER ERROR: There is no user status in this account.")
         Optional<UserProfile> userProfile = profileRepository.findByUserId(user.getId());
@@ -70,7 +70,7 @@ public class UserService {
     public Profile getUserProfileByUUID(@Valid String uuid){
 
         @Null(message = "Account with this UUID does not exists.")
-        User user = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new UsernameNotFoundException(""));
+        Account user = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new UsernameNotFoundException(""));
 
         @Null(message = "INTERNAL SERVER ERROR: There is no user status in this account.")
         Optional<UserProfile> userProfile = profileRepository.findByUserId(user.getId());

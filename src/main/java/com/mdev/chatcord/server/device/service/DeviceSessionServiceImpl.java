@@ -3,7 +3,7 @@ package com.mdev.chatcord.server.device.service;
 import com.mdev.chatcord.server.device.dto.DeviceDto;
 import com.mdev.chatcord.server.device.model.DeviceSession;
 import com.mdev.chatcord.server.device.repository.DeviceSessionRepository;
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -19,12 +19,12 @@ public class DeviceSessionServiceImpl implements DeviceSessionService{
     private final UserRepository userRepository;
 
     @Override
-    public boolean existsForUser(User user, String deviceId) {
+    public boolean existsForUser(Account user, String deviceId) {
         return deviceSessionRepository.existsByUserAndDeviceId(user, deviceId);
     }
 
     @Override
-    public void saveSession(User user, String deviceId, String deviceName, String os, String osVersion, String ip) {
+    public void saveSession(Account user, String deviceId, String deviceName, String os, String osVersion, String ip) {
         if (!existsForUser(user, deviceId)){
             DeviceSession session = DeviceSession.builder()
                     .user(user)
@@ -39,7 +39,7 @@ public class DeviceSessionServiceImpl implements DeviceSessionService{
     }
 
     @Override
-    public void saveSession(User user, DeviceDto deviceDto) {
+    public void saveSession(Account user, DeviceDto deviceDto) {
         if (!existsForUser(user, deviceDto.getDEVICE_ID())){
             DeviceSession deviceSession = DeviceSession.builder()
                     .user(user)
@@ -56,7 +56,7 @@ public class DeviceSessionServiceImpl implements DeviceSessionService{
     @Override
     public List<DeviceSession> getDevicesForUser(String subject) {
 
-        User user = userRepository.findByEmail(subject);
+        Account user = userRepository.findByEmail(subject);
 
         return deviceSessionRepository.findAll()
                 .stream()
@@ -67,7 +67,7 @@ public class DeviceSessionServiceImpl implements DeviceSessionService{
     @Override
     @Transactional
     public void removeDevice(String subject, String deviceId) {
-        User user = userRepository.findByEmail(subject);
+        Account user = userRepository.findByEmail(subject);
         deviceSessionRepository.deleteByUserAndDeviceId(user, deviceId);
     }
 }

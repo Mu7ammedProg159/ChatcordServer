@@ -1,6 +1,6 @@
 package com.mdev.chatcord.server.configuration;
 
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,9 +11,9 @@ import java.util.stream.Collectors;
 
 public class UserPrinciple implements UserDetails {
 
-    private final User user;
+    private final Account user;
 
-    public UserPrinciple(User user){
+    public UserPrinciple(Account user){
         this.user = user;
     }
 

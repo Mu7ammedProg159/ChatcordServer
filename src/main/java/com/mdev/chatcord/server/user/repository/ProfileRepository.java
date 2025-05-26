@@ -1,6 +1,5 @@
 package com.mdev.chatcord.server.user.repository;
 
-import com.mdev.chatcord.server.user.model.User;
 import com.mdev.chatcord.server.user.model.UserProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 

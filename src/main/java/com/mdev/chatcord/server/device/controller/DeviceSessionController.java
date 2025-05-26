@@ -5,7 +5,7 @@ import com.mdev.chatcord.server.device.model.DeviceSession;
 import com.mdev.chatcord.server.device.service.DeviceSessionService;
 import com.mdev.chatcord.server.email.service.OtpService;
 import com.mdev.chatcord.server.token.service.TokenService;
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,7 @@ public class DeviceSessionController {
     public ResponseEntity<?> verifyDevice(@RequestBody DeviceVerificationDTO deviceDTO){
         if(otpService.validateOtp(deviceDTO.getEmail(), deviceDTO.getOtp())) {
 
-            User user = userRepository.findByEmail(deviceDTO.getEmail());
+            Account user = userRepository.findByEmail(deviceDTO.getEmail());
 
             user.setEmailVerified(true);
             user.setAccountNonLocked(true);

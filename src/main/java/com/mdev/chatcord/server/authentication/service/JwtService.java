@@ -1,13 +1,11 @@
 package com.mdev.chatcord.server.authentication.service;
 
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
-import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.stream.Collectors;
@@ -18,7 +16,7 @@ public class JwtService {
 
     private final JwtEncoder jwtEncoder;
 
-    public String generateToken(User user){
+    public String generateToken(Account user){
         var claims = JwtClaimsSet.builder()
                 .issuer("http://localhost:8080")
                 .issuedAt(Instant.now())
@@ -32,7 +30,7 @@ public class JwtService {
 
     }
 
-    public String generateToken(Authentication authentication, User user){
+    public String generateToken(Authentication authentication, Account user){
 
         var claims = JwtClaimsSet.builder()
                 .issuer("http://localhost:8080")

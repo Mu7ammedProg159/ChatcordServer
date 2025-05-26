@@ -7,7 +7,6 @@ import com.mdev.chatcord.server.chat.dto.ChatDTO;
 import com.mdev.chatcord.server.chat.dto.PrivateChatParticipants;
 import com.mdev.chatcord.server.chat.dto.UnreadStatus;
 import com.mdev.chatcord.server.communication.dto.ChatMemberDTO;
-import com.mdev.chatcord.server.communication.dto.ChatRoleDTO;
 import com.mdev.chatcord.server.communication.model.ChatMember;
 import com.mdev.chatcord.server.communication.model.ChatRole;
 import com.mdev.chatcord.server.communication.model.Privilege;
@@ -17,9 +16,8 @@ import com.mdev.chatcord.server.communication.repository.PrivilegeRepository;
 import com.mdev.chatcord.server.communication.service.PrivilegeType;
 import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
-import com.mdev.chatcord.server.message.dto.MessageDTO;
 import com.mdev.chatcord.server.message.model.Message;
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.model.UserProfile;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import com.mdev.chatcord.server.user.repository.UserRepository;
@@ -31,7 +29,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -84,8 +81,8 @@ public class PrivateChatService {
 
     public ChatDTO retrieveConversation(String uuid, String receiverUsername, String receiverTag){
 
-        User sender = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
-        User receiver = userRepository.findByUsernameAndTag(receiverUsername, receiverTag).orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
+        Account sender = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+        Account receiver = userRepository.findByUsernameAndTag(receiverUsername, receiverTag).orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
 
         Chat chat = chatRepository.findPrivateChatBetweenUsers(
                 sender.getId(), receiver.getId(), ChatType.PRIVATE
@@ -116,7 +113,7 @@ public class PrivateChatService {
         return chatDTO;
     }
 
-    private ChatMember createDefaultChatMember(User chatUser, ChatRole chatRole) {
+    private ChatMember createDefaultChatMember(Account chatUser, ChatRole chatRole) {
         ChatMember chatMember = new ChatMember();
         chatMember.setUser(chatUser);
         chatMember.setMuted(false);

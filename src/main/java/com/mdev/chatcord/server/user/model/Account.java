@@ -13,7 +13,7 @@ import java.util.*;
 @Getter
 @Setter
 @NoArgsConstructor
-public class User {
+public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
@@ -45,7 +45,7 @@ public class User {
     private boolean isAccountNonLocked = false;
     private boolean isActive = true;
 
-    public User(String email, String password, String username) {
+    public Account(String email, String password, String username) {
         this.email = email;
         Password = password;
         this.username = username;

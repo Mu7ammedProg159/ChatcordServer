@@ -1,7 +1,7 @@
 package com.mdev.chatcord.server.email.controller;
 
 import com.mdev.chatcord.server.email.dto.OtpRequest;
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.repository.UserRepository;
 import com.mdev.chatcord.server.email.service.EmailService;
 import com.mdev.chatcord.server.email.service.OtpService;
@@ -28,7 +28,7 @@ public class EmailController {
     public ResponseEntity<String> verifyEmail(@RequestBody OtpRequest otpRequest){
         if(otpService.validateOtp(otpRequest.email(), otpRequest.otp())) {
 
-            User user = userRepository.findByEmail(otpRequest.email());
+            Account user = userRepository.findByEmail(otpRequest.email());
             if (user.isEmailVerified()) return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("The Email Address is already verified.");
 
             user.setEmailVerified(true);

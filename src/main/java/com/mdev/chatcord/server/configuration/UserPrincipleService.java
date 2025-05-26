@@ -1,6 +1,6 @@
 package com.mdev.chatcord.server.configuration;
 
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -19,7 +19,7 @@ public class UserPrincipleService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email);
+        Account user = userRepository.findByEmail(email);
         return new UserPrinciple(user);
     }
 }

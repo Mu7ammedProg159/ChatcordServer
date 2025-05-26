@@ -2,7 +2,7 @@ package com.mdev.chatcord.server.message.model;
 
 import com.mdev.chatcord.server.chat.Chat;
 import com.mdev.chatcord.server.message.service.EMessageStatus;
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,7 +23,7 @@ public class Message {
     private Long id;
 
     @ManyToOne
-    private User sender; // Who sent ?
+    private Account sender; // Who sent ?
 
     @ManyToOne
     private Chat chat; // Where sent ?

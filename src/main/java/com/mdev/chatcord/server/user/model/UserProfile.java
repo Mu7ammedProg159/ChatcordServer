@@ -18,13 +18,14 @@ public class UserProfile {
     private Long id;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private User user;
+    @JoinColumn(name = "account_id")
+    private Account user;
 
     private String quote;
     private String profilePictureUrl;
     private String aboutMe;
 
-    public UserProfile(User user, String quote, String profilePictureUrl, String aboutMe) {
+    public UserProfile(Account user, String quote, String profilePictureUrl, String aboutMe) {
         this.user = user;
         this.quote = quote;
         this.profilePictureUrl = profilePictureUrl;

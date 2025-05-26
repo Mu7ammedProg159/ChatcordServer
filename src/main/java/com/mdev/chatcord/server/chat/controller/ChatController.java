@@ -1,10 +1,8 @@
 package com.mdev.chatcord.server.chat.controller;
 
 import com.mdev.chatcord.server.chat.Chat;
-import com.mdev.chatcord.server.chat.ChatType;
 import com.mdev.chatcord.server.message.dto.MessageDTO;
 import com.mdev.chatcord.server.message.repository.MessageRepository;
-import com.mdev.chatcord.server.user.model.User;
 import com.mdev.chatcord.server.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;

@@ -3,7 +3,7 @@ package com.mdev.chatcord.server.token.service;
 import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.redis.service.RefreshTokenStore;
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -64,7 +64,7 @@ public class TokenService {
 //        refreshTokenStore.save(authentication.getName(), deviceId, token, REFRESH_TOKEN_TTL_SECONDS.toSeconds());
 //        return token;
 //    }
-    public String generateAccessTokenByUser(User user, String deviceId) {
+    public String generateAccessTokenByUser(Account user, String deviceId) {
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)
@@ -79,7 +79,7 @@ public class TokenService {
         return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
     }
 
-    public String generateRefreshToken(User user, String deviceId) {
+    public String generateRefreshToken(Account user, String deviceId) {
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)

@@ -1,11 +1,10 @@
 package com.mdev.chatcord.server.device.model;
 
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @AllArgsConstructor
@@ -19,7 +18,7 @@ public class DeviceSession {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private Account user;
 
     private String deviceId;
     private String deviceName;
@@ -28,7 +27,7 @@ public class DeviceSession {
     private String ip;
     private Instant createdAt;
 
-    public DeviceSession(User user, String deviceId, String deviceName, String os, String osVersion, String ip, Instant createdAt) {
+    public DeviceSession(Account user, String deviceId, String deviceName, String os, String osVersion, String ip, Instant createdAt) {
         this.user = user;
         this.deviceId = deviceId;
         this.deviceName = deviceName;

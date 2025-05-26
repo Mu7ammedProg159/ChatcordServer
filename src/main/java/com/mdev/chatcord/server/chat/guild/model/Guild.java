@@ -1,15 +1,12 @@
 package com.mdev.chatcord.server.chat.guild.model;
 
 import com.mdev.chatcord.server.chat.Chat;
-import com.mdev.chatcord.server.message.model.Message;
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.Set;
 
 @Entity
 @AllArgsConstructor
@@ -23,7 +20,7 @@ public class Guild extends Chat {
     private String guildPictureUrl;
 
     @ManyToOne
-    private User owner;
+    private Account owner;
 
     private boolean isPublic;
 

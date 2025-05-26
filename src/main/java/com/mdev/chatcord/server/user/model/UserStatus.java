@@ -19,12 +19,12 @@ public class UserStatus {
     private Long id;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private User user;
+    private Account user;
 
     @Enumerated(EnumType.STRING)
     private EUserState status;
 
-    public UserStatus(User user, EUserState status) {
+    public UserStatus(Account user, EUserState status) {
         this.user = user;
         this.status = status;
     }

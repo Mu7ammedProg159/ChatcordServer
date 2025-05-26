@@ -1,7 +1,7 @@
 package com.mdev.chatcord.server.friend.model;
 
 import com.mdev.chatcord.server.friend.service.EFriendStatus;
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,17 +22,17 @@ public class Friend {
     private Long id;
 
     @ManyToOne
-    private User owner;
+    private Account owner;
 
     @ManyToOne
-    private User friend;
+    private Account friend;
 
     @Enumerated(EnumType.STRING)
     private EFriendStatus friendStatus;
 
     private LocalDateTime addedAt;
 
-    public Friend(User owner, User friend, EFriendStatus friendStatus, LocalDateTime addedAt) {
+    public Friend(Account owner, Account friend, EFriendStatus friendStatus, LocalDateTime addedAt) {
         this.owner = owner;
         this.friend = friend;
         this.friendStatus = friendStatus;

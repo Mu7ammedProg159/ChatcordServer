@@ -9,15 +9,13 @@ import com.mdev.chatcord.server.chat.dto.PrivateChatParticipants;
 import com.mdev.chatcord.server.chat.service.PrivateChatService;
 import com.mdev.chatcord.server.communication.model.ChatMember;
 import com.mdev.chatcord.server.communication.model.ChatRole;
-import com.mdev.chatcord.server.communication.model.Privilege;
 import com.mdev.chatcord.server.communication.repository.ChatMemberRepository;
 import com.mdev.chatcord.server.communication.repository.ChatRoleRepository;
 import com.mdev.chatcord.server.exception.*;
 import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
-import com.mdev.chatcord.server.friend.dto.FriendDTO;
 import com.mdev.chatcord.server.friend.model.Friend;
 import com.mdev.chatcord.server.friend.repository.FriendRepository;
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.model.UserProfile;
 import com.mdev.chatcord.server.user.model.UserStatus;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
@@ -47,10 +45,10 @@ public class FriendService {
 
     public PrivateChatDTO addFriend(@Valid String uuid, String friendUsername, String friendTag){
 
-        User owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Account owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
                 () -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
-        User friend = userRepository.findByUsernameAndTag(friendUsername, friendTag).orElseThrow(
+        Account friend = userRepository.findByUsernameAndTag(friendUsername, friendTag).orElseThrow(
                 () -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
 
         if (owner.getId().equals(friend.getId()))
@@ -92,7 +90,7 @@ public class FriendService {
     }
 
     public List<PrivateChatDTO> getAllFriends(String uuid) {
-        User owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Account owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
                 () -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
         // In-Future if database became bigger overtime, must use pagination (+300 Records).
@@ -121,7 +119,7 @@ public class FriendService {
     }
 
     public List<PrivateChatDTO> getAllPendingFriends(String uuid) {
-        User currentUser = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Account currentUser = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
                 () -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
         // In-Future if database became bigger overtime, must use pagination (+300 Records).
@@ -150,7 +148,7 @@ public class FriendService {
     }
 
     public PrivateChatDTO getFriend(String uuid, String username, String tag) {
-        User owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Account owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
                 () -> new BusinessException(ExceptionCode.UUID_NOT_FOUND));
 
         // In-Future if database became bigger overtime, must use pagination (+300 Records).
@@ -182,8 +180,8 @@ public class FriendService {
     }
 
     public void removeFriend(String uuid, String username, String tag){
-        User owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
-        User friend = userRepository.findByUsernameAndTag(username, tag).orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
+        Account owner = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+        Account friend = userRepository.findByUsernameAndTag(username, tag).orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
 
         Chat chat = chatRepository.findPrivateChatBetweenUsers(owner.getId(), friend.getId(), ChatType.PRIVATE).orElseThrow();
         ChatMember chatMember = chatMemberRepository.findByChatId(chat.getId()).orElseThrow();

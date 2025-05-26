@@ -8,7 +8,7 @@ import com.mdev.chatcord.server.email.service.OtpService;
 import com.mdev.chatcord.server.exception.*;
 import com.mdev.chatcord.server.redis.service.RefreshTokenStore;
 import com.mdev.chatcord.server.token.service.TokenService;
-import com.mdev.chatcord.server.user.model.User;
+import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.model.UserStatus;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import com.mdev.chatcord.server.user.repository.UserRepository;
@@ -61,7 +61,7 @@ public class AuthenticationService {
             throw new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND);
 
         @Null(message = "Email or password is invalid.")
-        User user = userRepository.findByEmail(email);
+        Account user = userRepository.findByEmail(email);
 
         Authentication auth;
         try {
@@ -130,7 +130,7 @@ public class AuthenticationService {
     }
 
     public List<String> refreshAccessToken(Jwt jwt, Authentication authentication, String deviceId) {
-        User user = userRepository.findByEmail(jwt.getSubject());
+        Account user = userRepository.findByEmail(jwt.getSubject());
             try {
                 if (tokenService.isRefreshTokenValid(jwt.getSubject(), deviceId,
                         jwt.getTokenValue())){
@@ -150,7 +150,7 @@ public class AuthenticationService {
             throw new BusinessException(ExceptionCode.ACCOUNT_ALREADY_REGISTERED);
 
         @Null(message = "BAD REQUEST: Something went wrong when adding new friend.")
-        User user = new User(email, new BCryptPasswordEncoder().encode(password), username);
+        Account user = new Account(email, new BCryptPasswordEncoder().encode(password), username);
         user.getRoles().add(ERoles.USER);
 
         userService.createUser(user);
@@ -166,7 +166,7 @@ public class AuthenticationService {
                              String username, ERoles role){
 
         @Null(message = "BAD REQUEST: Something went wrong when adding new friend.")
-        User user = new User(email, password, username);
+        Account user = new Account(email, password, username);
         user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
         user.getRoles().add(role);
 
@@ -174,7 +174,7 @@ public class AuthenticationService {
 
     }
 
-    private Set<SimpleGrantedAuthority> mapRolesToAuthorities(User user) {
+    private Set<SimpleGrantedAuthority> mapRolesToAuthorities(Account user) {
         return user.getRoles().stream()
                 .map(roles -> new SimpleGrantedAuthority(roles.name()))
                 .collect(Collectors.toSet());
