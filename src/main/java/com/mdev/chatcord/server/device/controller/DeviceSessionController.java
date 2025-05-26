@@ -6,6 +6,7 @@ import com.mdev.chatcord.server.device.service.DeviceSessionService;
 import com.mdev.chatcord.server.email.service.OtpService;
 import com.mdev.chatcord.server.token.service.TokenService;
 import com.mdev.chatcord.server.user.model.Account;
+import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +46,7 @@ public class DeviceSessionController {
 
             accountRepository.save(account);
 
-            deviceSessionService.saveSession(account, deviceDTO.getDeviceDto());
+            deviceSessionService.saveSession(deviceDTO.getEmail(), deviceDTO.getDeviceDto());
 
             return ResponseEntity.ok("Device Verified Successfully");
         }

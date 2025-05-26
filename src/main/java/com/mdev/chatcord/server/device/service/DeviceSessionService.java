@@ -14,7 +14,7 @@ public interface DeviceSessionService {
     void saveSession(Profile profile, String deviceId, String deviceName, String os, String osVersion, String ip);
 //    public void saveSession(String subject, String deviceId, String deviceName, String os, String osVersion, String ip);
 
-    void saveSession(Profile profile, DeviceDto deviceDto);
+    void saveSession(String email, DeviceDto deviceDto);
 
     //    public List<DeviceSession> getDevicesForUser(User user);
     public List<DeviceSession> getDevicesForUser(String subject);

@@ -9,6 +9,7 @@ import com.mdev.chatcord.server.email.service.OtpService;
 import com.mdev.chatcord.server.exception.*;
 import com.mdev.chatcord.server.redis.service.RefreshTokenStore;
 import com.mdev.chatcord.server.token.service.TokenService;
+import com.mdev.chatcord.server.user.dto.ProfileDetails;
 import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.model.UserStatus;
@@ -42,7 +43,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AuthenticationService {
+public class  AuthenticationService {
 
     private final EmailService emailService;
     private final UserService userService;
@@ -60,7 +61,8 @@ public class AuthenticationService {
     private final IpLocationService locationService;
 
     @Transactional(rollbackFor = Exception.class)
-    public List<String> login(@Valid @Email(message = "Enter a valid email address.") String email, String password, DeviceDto deviceDto, String userAgent,  String IP_ADDRESS){
+    public AuthenticationResponse login(@Valid @Email(message = "Enter a valid email address.") String email,
+                                        String password, DeviceDto deviceDto, String userAgent,  String IP_ADDRESS){
 
         if (!emailService.isEmailRegistered(email))
             throw new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND);
@@ -105,7 +107,7 @@ public class AuthenticationService {
 
                 log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}]"
                                 + " from Country: {} and City: {}.",
-                        account.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
+                        profile.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
                         deviceDto.getOS_VERSION(), location.getCountry(), location.getCity());
 
                 deviceSessionService.saveSession(profile, deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(),
@@ -121,31 +123,35 @@ public class AuthenticationService {
             }
         }
 
-        String accessToken = tokenService.generateAccessTokenByUser(account, deviceDto.getDEVICE_ID());
+        Jwt refreshJwt = Jwt.withTokenValue(refreshToken).build();
+
+        String accessToken = tokenService.generateAccessToken(refreshJwt);
 
 //        userRepository.save(user);
 
-        UserStatus userStatus = userStatusRepository.findByUserId(account.getId()).orElseThrow();
+        UserStatus userStatus = userStatusRepository.findByProfileId(profile.getId()).orElseThrow();
         userStatus.setStatus(EUserState.ONLINE);
-
         userStatusRepository.save(userStatus);
 
         log.info("User with this Email Address: [{}] Logged In Successfully. His UUID is: ", auth.getName());
         log.info("User with this Email Address: [{}] Has these Authorities.", auth.getAuthorities());
 
-        return new AuthenticationResponse(accessToken, refreshToken, profile);
+        ProfileDetails profileDetails = new ProfileDetails(profile.getUuid(), profile.getUsername(), profile.getTag(),
+                profile.getUserStatus().getStatus().name(), profile.getAvatarUrl(), profile.getAboutMe(), profile.getQuote());
+
+        return new AuthenticationResponse(accessToken, refreshToken, profileDetails);
     }
 
-    public List<String> refreshAccessToken(@AuthenticationPrincipal Jwt jwt, String deviceId) {
+    // Bearer as Refresh Token not Access Token !!
+    public String refreshAccessToken(@AuthenticationPrincipal Jwt jwt, String deviceId) {
         Account account = accountRepository.findByEmail(jwt.getSubject());
             try {
                 if (tokenService.isRefreshTokenValid(jwt.getSubject(), deviceId,
                         jwt.getTokenValue())){
-                    return Arrays.asList(tokenService.generateAccessToken(jwt, deviceId));
+                    return tokenService.generateAccessToken(jwt);
                 }
             } catch (ExpiredRefreshTokenException e) {
-                return Arrays.asList(tokenService.generateAccessTokenByUser(account, deviceId),
-                        tokenService.generateRefreshToken(account, deviceId));
+                return tokenService.generateAccessToken(jwt);
             }
         throw new RuntimeException("INTERNAL SERVER ERROR: SOMETHING WENT WRONG REFRESHING TOKEN");
     }

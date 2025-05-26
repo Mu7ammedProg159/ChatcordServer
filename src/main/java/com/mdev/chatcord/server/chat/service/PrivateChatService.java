@@ -22,13 +22,12 @@ import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import com.mdev.chatcord.server.user.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +40,7 @@ public class PrivateChatService {
     private final ChatRoleRepository chatRoleRepository;
     private final PrivilegeRepository privilegeRepository;
 
+    @Transactional(rollbackFor = Exception.class)
     public ChatDTO createPrivateChat(PrivateChatParticipants participants){
         Chat receiverChat = new Chat();
         receiverChat.setType(ChatType.PRIVATE);
@@ -55,52 +55,54 @@ public class PrivateChatService {
         List<ChatMember> chatMembers = List.of(senderChatMember, receiverChatMember);
         chatMemberRepository.saveAll(chatMembers);
 
-        participants.sender().getParticipation().add(senderChatMember);
-        participants.receiver().getParticipation().add(receiverChatMember);
-
-        accountRepository.save(participants.sender());
-        accountRepository.save(participants.receiver());
-
         receiverChat.setMembers(chatMembers);
         chatRepository.save(receiverChat);
 
         ChatMemberDTO senderChatMemberDTO = new ChatMemberDTO(participants.sender().getUsername(),
-                participants.sender().getTag(), participants.senderProfile().getAvatarUrl(),
+                participants.sender().getTag(), participants.sender().getAvatarUrl(),
                 senderChatMember.getRole().getName());
 
         ChatMemberDTO receiverChatMemberDTO = new ChatMemberDTO(participants.receiver().getUsername(),
-                participants.receiver().getTag(), participants.receiverProfile().getAvatarUrl(),
+                participants.receiver().getTag(), participants.receiver().getAvatarUrl(),
                 receiverChatMember.getRole().getName());
 
         return ChatDTO.builder()
                 .chatType(receiverChat.getType())
                 .chatMembersDto(List.of(senderChatMemberDTO, receiverChatMemberDTO))
                 .unreadStatus(new UnreadStatus(0, false, false))
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 
     public ChatDTO retrieveConversation(String uuid, String receiverUsername, String receiverTag){
 
-        Account sender = userProfileRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
-        Account receiver = userProfileRepository.findByUsernameAndTag(receiverUsername, receiverTag).orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
+        Profile sender = userProfileRepository.findByUuid(UUID.fromString(uuid))
+                .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+
+        Profile receiver = userProfileRepository.findByUsernameAndTag(receiverUsername, receiverTag)
+                .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
 
         Chat chat = chatRepository.findPrivateChatBetweenUsers(
-                sender.getId(), receiver.getId(), ChatType.PRIVATE
+                sender.getId(),
+                receiver.getId(),
+                ChatType.PRIVATE
         ).orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
 
         List<ChatMember> members = chat.getMembers();
-        List<ChatMemberDTO> membersDTO = null;
+        List<ChatMemberDTO> membersDTO = new ArrayList<>();
 
         for (ChatMember member: members){
             Profile profile = userProfileRepository.findByAccountId(member.getProfile().getId()).orElseThrow(()
                     -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+
             membersDTO.add(new ChatMemberDTO(member.getProfile().getUsername(), member.getProfile().getTag(),
                     profile.getAvatarUrl(), member.getRole().getName()));
         }
 
-        Message lastMessage = chat.getMessages().stream().sorted(Comparator.comparing(Message::getSentAt).reversed()).findFirst().orElseThrow();
+        Message lastMessage = chat.getMessages().stream().sorted(Comparator.comparing(Message::getSentAt).reversed())
+                .findFirst().orElseThrow(() -> new BusinessException(ExceptionCode.MESSAGE_NOT_FOUND));
 
-        ChatDTO chatDTO = ChatDTO.builder()
+        return ChatDTO.builder()
                 .chatType(chat.getType())
                 .chatMembersDto(membersDTO)
                 .lastMessage(lastMessage.getMessage())
@@ -109,21 +111,18 @@ public class PrivateChatService {
                 .lastMessageSender(lastMessage.getSender().getUsername())
                 .unreadStatus(new UnreadStatus(0, false, false))
                 .build();
-
-        return chatDTO;
     }
 
-    private ChatMember createDefaultChatMember(Account chatAccount, ChatRole chatRole) {
+    private ChatMember createDefaultChatMember(Profile chatProfile, ChatRole chatRole) {
         ChatMember chatMember = new ChatMember();
-        chatMember.setAccount(chatAccount);
+        chatMember.setProfile(chatProfile);
         chatMember.setMuted(false);
-
         chatMember.setRole(chatRole);
         chatMember.setPings(0);
-
         return chatMember;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public ChatRole createRole(String roleName, Chat chat){
 
         if (!chatRoleRepository.existsByNameAndChat_Id(roleName, chat.getId())){
@@ -139,6 +138,7 @@ public class PrivateChatService {
             return chatRole;
         }
 
-        return chatRoleRepository.findByNameAndChat_Id(roleName, chat.getId()).orElseThrow();
+        return chatRoleRepository.findByNameAndChat_Id(roleName, chat.getId())
+                .orElseThrow(() -> new BusinessException(ExceptionCode.CHAT_NOT_FOUND));
     }
 }

@@ -16,7 +16,9 @@ public enum ExceptionCode {
     FRIEND_NOT_FOUND("3001", "The friend you're trying to add does not exists."),
     FRIENDSHIP_NOT_FOUND("3002", "Friend is not added."),
     CANNOT_ADD_SELF("3003", "You can't add yourself as a friend."),
-    FRIEND_ALREADY_ADDED("3004", "You cannot add existing friend.");
+    FRIEND_ALREADY_ADDED("3004", "You cannot add existing friend."),
+    CHAT_NOT_FOUND("4001", "You cannot view this chat. Unable to fetch chat."),
+    MESSAGE_NOT_FOUND("5001", "Unable to find this message.");
 
     private final String code;
     private final String message;

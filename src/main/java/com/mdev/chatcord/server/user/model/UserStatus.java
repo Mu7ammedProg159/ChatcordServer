@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.user.model;
 
+import com.mdev.chatcord.server.BaseEntity;
 import com.mdev.chatcord.server.user.service.EUserState;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -12,17 +13,12 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class UserStatus {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class UserStatus extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private EUserState status;
 
     @OneToOne
-    @MapsId
     private Profile profile;
 
     public UserStatus(EUserState status) {

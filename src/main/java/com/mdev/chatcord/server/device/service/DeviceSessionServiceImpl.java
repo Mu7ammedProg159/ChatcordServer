@@ -44,7 +44,10 @@ public class DeviceSessionServiceImpl implements DeviceSessionService{
     }
 
     @Override
-    public void saveSession(Profile profile, DeviceDto deviceDto) {
+    public void saveSession(String email, DeviceDto deviceDto) {
+        Profile profile = profileRepository.findByAccountEmail(email)
+                .orElseThrow(() -> new BusinessException(ExceptionCode.INVALID_EMAIL));
+
         if (!existsForUser(profile, deviceDto.getDEVICE_ID())){
             DeviceSession deviceSession = DeviceSession.builder()
                     .profile(profile)
@@ -61,11 +64,12 @@ public class DeviceSessionServiceImpl implements DeviceSessionService{
     @Override
     public List<DeviceSession> getDevicesForUser(String subject) {
 
-        Account account = accountRepository.findByEmail(subject);
+        Profile profile = profileRepository.findByAccountEmail(subject)
+                .orElseThrow(() -> new BusinessException(ExceptionCode.INVALID_EMAIL));
 
         return deviceSessionRepository.findAll()
                 .stream()
-                .filter(d -> d.getProfile().equals(account))
+                .filter(d -> d.getProfile().equals(profile))
                 .toList();
     }
 

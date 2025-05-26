@@ -1,10 +1,7 @@
 package com.mdev.chatcord.server.friend.controller;
 
-import com.mdev.chatcord.server.chat.dto.ChatDTO;
 import com.mdev.chatcord.server.chat.dto.PrivateChatDTO;
 import com.mdev.chatcord.server.chat.service.PrivateChatService;
-import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
-import com.mdev.chatcord.server.friend.dto.FriendDTO;
 import com.mdev.chatcord.server.friend.service.FriendService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -37,7 +34,7 @@ public class FriendController {
 
     @GetMapping("/{username}/{tag}")
     public ResponseEntity<?> requestFriend(@AuthenticationPrincipal Jwt jwt, @PathVariable String username, @PathVariable String tag){
-        PrivateChatDTO privateChatDTO = friendService.getFriend(jwt.getClaimAsString("uuid"), username, tag);
+        PrivateChatDTO privateChatDTO = friendService.getFriendship(jwt.getClaimAsString("uuid"), username, tag);
         return ResponseEntity.ok(privateChatDTO);
     }
 

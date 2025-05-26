@@ -39,11 +39,11 @@ public class UserService {
     @Transactional(rollbackFor = Exception.class)
     public void createUser(Account account, String username){
 
-        Profile profile = new Profile(username, null, default_pfp, null);
+        Profile profile = new Profile(username, default_pfp, "What you are thinking today?", "Tell others about you!");
 
-        profile.setUserStatus(new UserStatus(EUserState.OFFLINE));
-        account.setProfile(profile);
+        UserStatus userStatus = new UserStatus(EUserState.OFFLINE);
 
+        linkAccountProfileStatus(account, profile, userStatus);
         accountRepository.save(account);
     }
 
@@ -62,6 +62,13 @@ public class UserService {
     public Page<UUID> getAllUUID(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
         return profileRepository.findAllByUuid(pageable);
+    }
+
+    private static void linkAccountProfileStatus(Account account, Profile profile, UserStatus userStatus) {
+        profile.setUserStatus(userStatus);
+        profile.setAccount(account);
+        userStatus.setProfile(profile);
+        account.setProfile(profile);
     }
 
 }

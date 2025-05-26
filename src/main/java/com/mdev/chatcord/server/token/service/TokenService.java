@@ -5,6 +5,7 @@ import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.redis.service.RefreshTokenStore;
 import com.mdev.chatcord.server.user.model.Account;
+import com.mdev.chatcord.server.user.model.Profile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -35,14 +36,14 @@ public class TokenService {
     private final Duration ACCESS_TOKEN_TTL_SECONDS = Duration.ofMinutes(15); // 15 minutes
     private final Duration REFRESH_TOKEN_TTL_SECONDS = Duration.ofDays(7); // 7 days
 
-    public String generateAccessToken(Jwt refreshJwt, String deviceId) {
+    public String generateAccessToken(Jwt refreshJwt) {
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(ACCESS_TOKEN_TTL_SECONDS.toSeconds()))
                 .subject(refreshJwt.getSubject())
-                .claim("device-id", deviceId)
+                .claim("device-id", refreshJwt.getClaimAsString("device-id"))
                 .claim("uuid", refreshJwt.getClaimAsString("uuid"))
                 .claim("scope", refreshJwt.getClaimAsString("scope"))
                 .build();
@@ -66,20 +67,22 @@ public class TokenService {
 //        refreshTokenStore.save(authentication.getName(), deviceId, token, REFRESH_TOKEN_TTL_SECONDS.toSeconds());
 //        return token;
 //    }
-    public String generateAccessTokenByUser(Account account, String deviceId) {
 
-        JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer(issuer)
-                .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plusSeconds(ACCESS_TOKEN_TTL_SECONDS.toSeconds()))
-                .subject(account.getEmail())
-                .claim("device-id", deviceId)
-                .claim("uuid", account.getUuid())
-                .claim("scope", account.getRoles().stream().map(Enum::name).collect(Collectors.joining(" ")))
-                .build();
-
-        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
-    }
+    // Logically you cannot generate access token unless having a refresh token.
+//    public String generateAccessTokenByUser(String email, Profile profile, String deviceId) {
+//
+//        JwtClaimsSet claims = JwtClaimsSet.builder()
+//                .issuer(issuer)
+//                .issuedAt(Instant.now())
+//                .expiresAt(Instant.now().plusSeconds(ACCESS_TOKEN_TTL_SECONDS.toSeconds()))
+//                .subject(email)
+//                .claim("device-id", deviceId)
+//                .claim("uuid", profile.getUuid())
+//                .claim("scope", profile.getRoles().stream().map(Enum::name).collect(Collectors.joining(" ")))
+//                .build();
+//
+//        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+//    }
 
     public String generateRefreshToken(String email, String uuid, Set<ERoles> roles, String deviceId) {
 
@@ -94,7 +97,7 @@ public class TokenService {
                 .build();
 
         String token = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
-        refreshTokenStore.save(account.getEmail(), deviceId, token, REFRESH_TOKEN_TTL_SECONDS.toSeconds());
+        refreshTokenStore.save(email, deviceId, token, REFRESH_TOKEN_TTL_SECONDS.toSeconds());
         return token;
     }
 
@@ -116,7 +119,7 @@ public class TokenService {
         }
 
         // You may extract the uuid and scope from the decoded JWT claims if needed
-        return generateAccessToken(refreshJwt, deviceId);
+        return generateAccessToken(refreshJwt);
     }
 
     private String createScope(Authentication authentication) {

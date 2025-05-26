@@ -13,17 +13,17 @@ import java.util.Optional;
 @Repository
 public interface ChatRepository extends JpaRepository<Chat, Long> {
 
-    List<Chat> findByMembers_User_Id(Long id);
+    List<Chat> findByMembers_Profile_Id(Long id);
 
     @Query("""
     SELECT c FROM Chat c
     WHERE c.type = :type
       AND SIZE(c.members) = 2
       AND EXISTS (
-        SELECT m1 FROM ChatMember m1 WHERE m1.chat = c AND m1.account.id = :senderId
+        SELECT m1 FROM ChatMember m1 WHERE m1.chat = c AND m1.profile.id = :senderId
       )
       AND EXISTS (
-        SELECT m2 FROM ChatMember m2 WHERE m2.chat = c AND m2.account.id = :friendId
+        SELECT m2 FROM ChatMember m2 WHERE m2.chat = c AND m2.profile.id = :friendId
       )
    """)
     Optional<Chat> findPrivateChatBetweenUsers(@Param("senderId") Long senderId,

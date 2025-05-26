@@ -20,12 +20,12 @@ public class Account extends BaseEntity {
 
     private String Password;
 
-    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private Profile profile;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
-    private Set<ERoles> roles = new HashSet<>(Set.of(ERoles.USER));
+    private Set<ERoles> roles = new HashSet<>();
 
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;

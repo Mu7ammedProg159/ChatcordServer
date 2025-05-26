@@ -9,9 +9,9 @@ import java.util.Optional;
 @Repository
 public interface ChatMemberRepository extends JpaRepository<ChatMember, Long> {
 
-    Optional<ChatMember> findByUserId(Long id);
+    Optional<ChatMember> findByProfileId(Long id);
     Optional<ChatMember> findByChatId(Long id);
 
-    void deleteByUserId(Long id);
+    void deleteByProfileId(Long id);
 
 }

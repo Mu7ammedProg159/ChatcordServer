@@ -17,8 +17,7 @@ import java.util.UUID;
 @Setter
 public class Profile extends BaseEntity {
 
-    @MapsId
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToOne(mappedBy = "profile")
     private Account account;
 
     @Column(unique = true, nullable = false, updatable = false)
