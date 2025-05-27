@@ -77,7 +77,7 @@ com.chatcord.server
 1. Set up MS SQL Server and Redis (use Docker)  
 2. Clone the backend repo:
 ```bash
-git clone https://github.com/NinjaBattosai/Chatcord-Server.git
+git clone https://github.com/Mu7ammedProg159/Chatcord-Server.git
 cd Chatcord-Server
 ```
 3. Add RSA keys in `/resources/keys/`  
