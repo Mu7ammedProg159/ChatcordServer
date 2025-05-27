@@ -1,6 +1,6 @@
 package com.mdev.chatcord.server.user.model;
 
-import com.mdev.chatcord.server.BaseEntity;
+import com.mdev.chatcord.server.common.BaseEntity;
 import com.mdev.chatcord.server.user.service.EUserState;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -18,7 +18,7 @@ public class UserStatus extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private EUserState status;
 
-    @OneToOne
+    @OneToOne(mappedBy = "userStatus")
     private Profile profile;
 
     public UserStatus(EUserState status) {

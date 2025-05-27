@@ -5,6 +5,7 @@ import com.mdev.chatcord.server.message.service.EMessageStatus;
 import lombok.*;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,8 +16,8 @@ public class MessageDTO implements Serializable {
 
     private ChatType chatType;
     private String content;
-    private String sender; // uuid
-    private String receiver; // Can be username#tag or guildId << this is currently is the group.
+    private UUID sender; // uuid
+    private UUID receiver; // Can be username#tag or guildId << this is currently is the group.
     private long timestamp;
     private boolean isEdited;
     private EMessageStatus messageStatus;

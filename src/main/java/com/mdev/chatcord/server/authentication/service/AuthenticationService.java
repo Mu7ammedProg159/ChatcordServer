@@ -62,7 +62,9 @@ public class  AuthenticationService {
 
     @Transactional(rollbackFor = Exception.class)
     public AuthenticationResponse login(@Valid @Email(message = "Enter a valid email address.") String email,
-                                        String password, DeviceDto deviceDto, String userAgent,  String IP_ADDRESS){
+                                        String password, DeviceDto deviceDto, String IP_ADDRESS){
+
+        email = email.toLowerCase();
 
         if (!emailService.isEmailRegistered(email))
             throw new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND);
@@ -88,10 +90,10 @@ public class  AuthenticationService {
 
         String refreshToken = null;
 
-        if (userAgent != null && userAgent.equalsIgnoreCase("ReactorNetty/1.2.4")){
-            deviceDto.setOS(userAgent);
-            deviceDto.setDEVICE_NAME("Web-Browser");
-        }
+//        if (deviceDto.getOS() != null && deviceDto.getOS().equalsIgnoreCase("ReactorNetty/1.2.4")){
+//            deviceDto.setOS(deviceDto.getOS());
+//            deviceDto.setDEVICE_NAME("Web-Browser");
+//        }
 
         var location = locationService.getLocation(IP_ADDRESS);
         if (!deviceSessionService.existsForUser(profile, deviceDto.getDEVICE_ID())) {
@@ -100,7 +102,7 @@ public class  AuthenticationService {
                     profile.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
                     deviceDto.getOS_VERSION(), IP_ADDRESS);
 
-            refreshToken = tokenService.generateRefreshToken(email, profile.getTag(), rolesByEmail, deviceDto.getDEVICE_ID());
+            refreshToken = tokenService.generateRefreshToken(email, String.valueOf(profile.getUuid()), rolesByEmail, deviceDto.getDEVICE_ID());
 
             // If this true that means it is the first time logging. EXCEPT if he logged out from all devices.
             if (deviceSessionService.getDevicesForUser(email).isEmpty()){
@@ -122,8 +124,11 @@ public class  AuthenticationService {
                        location.getCountry() + " \n City: " + location.getCity());
             }
         }
+        else {
+            refreshToken = tokenService.getRefreshTokenFromRedis(email, deviceDto.getDEVICE_ID());
+        }
 
-        Jwt refreshJwt = Jwt.withTokenValue(refreshToken).build();
+        Jwt refreshJwt = tokenService.getJwtFromTokenValue(refreshToken);
 
         String accessToken = tokenService.generateAccessToken(refreshJwt);
 
@@ -132,11 +137,12 @@ public class  AuthenticationService {
         UserStatus userStatus = userStatusRepository.findByProfileId(profile.getId()).orElseThrow();
         userStatus.setStatus(EUserState.ONLINE);
         userStatusRepository.save(userStatus);
+        profile.setUserStatus(userStatus);
 
         log.info("User with this Email Address: [{}] Logged In Successfully. His UUID is: ", auth.getName());
         log.info("User with this Email Address: [{}] Has these Authorities.", auth.getAuthorities());
 
-        ProfileDetails profileDetails = new ProfileDetails(profile.getUuid(), profile.getUsername(), profile.getTag(),
+        ProfileDetails profileDetails = new ProfileDetails(String.valueOf(profile.getUuid()), profile.getUsername(), profile.getTag(),
                 profile.getUserStatus().getStatus().name(), profile.getAvatarUrl(), profile.getAboutMe(), profile.getQuote());
 
         return new AuthenticationResponse(accessToken, refreshToken, profileDetails);

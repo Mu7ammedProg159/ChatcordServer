@@ -45,9 +45,9 @@ public class AuthenticationController {
     public ResponseEntity<?> login(@Valid @RequestBody AuthenticationRequest authenticationRequest, HttpServletRequest httpHeaders) {
 
         String ip = RequestMetadataUtil.retrieveClientIp(httpHeaders);
-        String userAgent = RequestMetadataUtil.extractUserAgent(httpHeaders);
 
-        return ResponseEntity.ok(authenticationService.login(authenticationRequest.getEmail(), authenticationRequest.getPassword(), authenticationRequest.getDeviceDto(), userAgent, ip));
+        return ResponseEntity.ok(authenticationService.login(authenticationRequest.getEmail(),
+                authenticationRequest.getPassword(), authenticationRequest.getDeviceDto(), ip));
     }
 
     @PostMapping("/refresh-key")

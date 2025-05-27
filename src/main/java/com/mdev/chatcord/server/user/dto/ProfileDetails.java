@@ -13,7 +13,7 @@ import java.util.UUID;
 @Setter
 public class ProfileDetails {
 
-    private UUID uuid;
+    private String uuid;
     private String username;
     private String tag;
     private String status;

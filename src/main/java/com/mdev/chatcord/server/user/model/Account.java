@@ -1,6 +1,6 @@
 package com.mdev.chatcord.server.user.model;
 
-import com.mdev.chatcord.server.BaseEntity;
+import com.mdev.chatcord.server.common.BaseEntity;
 import com.mdev.chatcord.server.authentication.service.ERoles;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -20,7 +20,7 @@ public class Account extends BaseEntity {
 
     private String Password;
 
-    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     private Profile profile;
 
     @ElementCollection(fetch = FetchType.EAGER)

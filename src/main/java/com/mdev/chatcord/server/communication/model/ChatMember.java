@@ -22,7 +22,8 @@ public class ChatMember {
     @ManyToOne
     private Profile profile; // Who the member of a chat ?
 
-    @ManyToOne
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "chat_id", nullable = false)
     private Chat chat; // Where the chat is ?
 
     @ManyToMany

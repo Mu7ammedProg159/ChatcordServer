@@ -15,13 +15,12 @@ import com.mdev.chatcord.server.exception.*;
 import com.mdev.chatcord.server.friend.dto.FriendContactDTO;
 import com.mdev.chatcord.server.friend.model.Friendship;
 import com.mdev.chatcord.server.friend.repository.FriendRepository;
-import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import com.mdev.chatcord.server.user.repository.AccountRepository;
 import com.mdev.chatcord.server.user.repository.UserStatusRepository;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -92,7 +91,7 @@ public class FriendService {
         List<PrivateChatDTO> privateChatDTOList = new ArrayList<>();
 
         for (Friendship friendship : friendships) {
-            Profile friendProfile = profileRepository.findByAccountId(friendship.getFriend().getId()).orElseThrow(
+            Profile friendProfile = profileRepository.findById(friendship.getFriend().getId()).orElseThrow(
                     () -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND, "User with ID " +
                             friendship.getId() + " not found"));;
             //PrivateChat friendChat = pr
@@ -164,7 +163,7 @@ public class FriendService {
 
         FriendContactDTO friendContactDTO;
 
-        Profile friendProfile = profileRepository.findByAccountId(friendship.getFriend().getId())
+        Profile friendProfile = profileRepository.findById(friendship.getFriend().getId())
                 .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
 
         friendContactDTO = new FriendContactDTO(friendship.getFriend().getUsername(), friendship.getFriend().getTag(),
@@ -186,12 +185,15 @@ public class FriendService {
         Chat chat = chatRepository.findPrivateChatBetweenUsers(owner.getId(), friend.getId(), ChatType.PRIVATE)
                 .orElseThrow(() -> new BusinessException(ExceptionCode.CHAT_NOT_FOUND));
 
-        ChatMember chatMember = chatMemberRepository.findByChatId(chat.getId()).orElseThrow();
-        ChatRole chatRole = chatRoleRepository.findById(chatMember.getRole().getId()).orElseThrow();
+        // ChatMember chatMember = chatMemberRepository.findByChatId(chat.getId()).orElseThrow();
 
-        friendRepository.deleteFriendship(owner.getId(), friend.getId());
-        chatRoleRepository.delete(chatRole);
-        chatMemberRepository.delete(chatMember);
+//        if (chatMember.getRole() != null){
+//            ChatRole chatRole = chatRoleRepository.findById(chatMember.getRole().getId()).orElseThrow();
+//            chatRoleRepository.delete(chatRole);
+//        }
+
+//        friendRepository.deleteFriendship(owner.getId(), friend.getId());
+//        chatMemberRepository.delete(chatMember);
         chatRepository.delete(chat);
 
     }

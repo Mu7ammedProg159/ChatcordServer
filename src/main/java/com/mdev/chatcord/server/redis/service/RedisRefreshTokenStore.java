@@ -22,6 +22,11 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
     }
 
     @Override
+    public String retrieve(String username, String deviceId) {
+        return redisTemplate.opsForValue().get(key(username, deviceId));
+    }
+
+    @Override
     public boolean exists(String username, String deviceId, String token) {
         String stored = redisTemplate.opsForValue().get(key(username, deviceId));
         return token.equals(stored);

@@ -1,6 +1,6 @@
 package com.mdev.chatcord.server.user.model;
 
-import com.mdev.chatcord.server.BaseEntity;
+import com.mdev.chatcord.server.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,7 +32,7 @@ public class Profile extends BaseEntity {
     private String quote;
     private String aboutMe;
 
-    @OneToOne(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     private UserStatus userStatus;
 
     public Profile(String username, String avatarUrl, String quote, String aboutMe) {

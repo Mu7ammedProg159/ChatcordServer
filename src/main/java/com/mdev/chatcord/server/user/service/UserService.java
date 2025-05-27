@@ -53,7 +53,7 @@ public class UserService {
         Profile profile = profileRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
                 () -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
-        return new ProfileDetails(profile.getUuid(), profile.getUsername(), profile.getTag(),
+        return new ProfileDetails(String.valueOf(profile.getUuid()), profile.getUsername(), profile.getTag(),
                 profile.getUserStatus().getStatus().name(), profile.getAvatarUrl(),
                 profile.getAboutMe(), profile.getQuote());
     }

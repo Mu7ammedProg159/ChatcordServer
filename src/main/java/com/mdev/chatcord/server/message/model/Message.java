@@ -1,6 +1,7 @@
 package com.mdev.chatcord.server.message.model;
 
 import com.mdev.chatcord.server.chat.Chat;
+import com.mdev.chatcord.server.common.BaseEntity;
 import com.mdev.chatcord.server.message.service.EMessageStatus;
 import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.model.Profile;
@@ -17,11 +18,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Message {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Message extends BaseEntity {
 
     @ManyToOne
     private Profile sender; // Who sent ?

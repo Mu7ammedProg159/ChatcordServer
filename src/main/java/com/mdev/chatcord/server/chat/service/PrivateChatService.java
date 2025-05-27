@@ -47,27 +47,35 @@ public class PrivateChatService {
         receiverChat.setCreatedAt(LocalDateTime.now());
         chatRepository.save(receiverChat);
 
-        ChatRole chatRole = createRole("Member", receiverChat);
+        //ChatRole chatRole = createRole("Member", receiverChat);
 
-        ChatMember senderChatMember = createDefaultChatMember(participants.sender(), chatRole);
-        ChatMember receiverChatMember = createDefaultChatMember(participants.receiver(), chatRole);
+        ChatMember senderChatMember = createDefaultChatMember(participants.sender(), receiverChat, null);
+        ChatMember receiverChatMember = createDefaultChatMember(participants.receiver(), receiverChat, null);
 
-        List<ChatMember> chatMembers = List.of(senderChatMember, receiverChatMember);
-        chatMemberRepository.saveAll(chatMembers);
+        senderChatMember.setChat(receiverChat);
+        receiverChatMember.setChat(receiverChat);
 
+        List<ChatMember> chatMembers = new ArrayList<>(List.of(senderChatMember, receiverChatMember));
         receiverChat.setMembers(chatMembers);
-        chatRepository.save(receiverChat);
+
+        //chatMemberRepository.saveAll(chatMembers);
+        try {
+            chatRepository.save(receiverChat);
+        } catch (Exception e) {
+            e.printStackTrace(); // ✅ Logs full trace
+            throw e;
+        }
 
         ChatMemberDTO senderChatMemberDTO = new ChatMemberDTO(participants.sender().getUsername(),
                 participants.sender().getTag(), participants.sender().getAvatarUrl(),
-                senderChatMember.getRole().getName());
+                "Member");
 
         ChatMemberDTO receiverChatMemberDTO = new ChatMemberDTO(participants.receiver().getUsername(),
                 participants.receiver().getTag(), participants.receiver().getAvatarUrl(),
-                receiverChatMember.getRole().getName());
+                "Member");
 
         return ChatDTO.builder()
-                .chatType(receiverChat.getType())
+                .chatType(receiverChat.getType().name())
                 .chatMembersDto(List.of(senderChatMemberDTO, receiverChatMemberDTO))
                 .unreadStatus(new UnreadStatus(0, false, false))
                 .createdAt(LocalDateTime.now())
@@ -96,26 +104,30 @@ public class PrivateChatService {
                     -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
             membersDTO.add(new ChatMemberDTO(member.getProfile().getUsername(), member.getProfile().getTag(),
-                    profile.getAvatarUrl(), member.getRole().getName()));
+                    profile.getAvatarUrl(), "Member"));
         }
 
-        Message lastMessage = chat.getMessages().stream().sorted(Comparator.comparing(Message::getSentAt).reversed())
-                .findFirst().orElseThrow(() -> new BusinessException(ExceptionCode.MESSAGE_NOT_FOUND));
+        Message lastMessage = null;
+        if (!chat.getMessages().isEmpty()){
+            lastMessage = chat.getMessages().stream().sorted(Comparator.comparing(Message::getSentAt).reversed())
+                    .findFirst().orElseThrow(() -> new BusinessException(ExceptionCode.MESSAGE_NOT_FOUND));
+        }
 
         return ChatDTO.builder()
-                .chatType(chat.getType())
+                .chatType(chat.getType().name())
                 .chatMembersDto(membersDTO)
-                .lastMessage(lastMessage.getMessage())
+                .lastMessage(lastMessage != null ? lastMessage.getMessage() : null)
                 .createdAt(chat.getCreatedAt())
-                .lastMessageAt(lastMessage.getSentAt())
-                .lastMessageSender(lastMessage.getSender().getUsername())
+                .lastMessageAt(lastMessage != null ? lastMessage.getSentAt() : null)
+                .lastMessageSender(lastMessage != null ? lastMessage.getSender().getUsername() : null)
                 .unreadStatus(new UnreadStatus(0, false, false))
                 .build();
     }
 
-    private ChatMember createDefaultChatMember(Profile chatProfile, ChatRole chatRole) {
+    private ChatMember createDefaultChatMember(Profile chatProfile, Chat chat, ChatRole chatRole) {
         ChatMember chatMember = new ChatMember();
         chatMember.setProfile(chatProfile);
+        chatMember.setChat(chat);
         chatMember.setMuted(false);
         chatMember.setRole(chatRole);
         chatMember.setPings(0);

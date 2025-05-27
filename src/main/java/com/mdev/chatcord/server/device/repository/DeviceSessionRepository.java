@@ -11,7 +11,7 @@ import java.util.Optional;
 @Repository
 public interface DeviceSessionRepository extends JpaRepository<DeviceSession, Long> {
 
-    Optional<DeviceSession> findByUserAndDeviceId(Account account, String deviceId);
+    Optional<DeviceSession> findByProfileAndDeviceId(Profile profile, String deviceId);
 
     boolean existsByProfileAndDeviceId(Profile profile, String deviceId);
 

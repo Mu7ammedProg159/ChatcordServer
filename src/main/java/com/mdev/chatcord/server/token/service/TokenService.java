@@ -10,10 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtClaimsSet;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -28,6 +25,7 @@ public class TokenService {
     //private final RedisTemplate<String, Object> redisTemplate;
 
     private final JwtEncoder jwtEncoder; // Provided by Spring Authorization Server
+    private final JwtDecoder jwtDecoder;
     private final RefreshTokenStore refreshTokenStore; // A Redis-backed service for storing refresh tokens.
 
     //@Value("application.chatcord.server.url")
@@ -105,6 +103,10 @@ public class TokenService {
         return refreshTokenStore.exists(subject, deviceId, token);
     }
 
+    public String getRefreshTokenFromRedis(String subject, String deviceId){
+        return refreshTokenStore.retrieve(subject, deviceId);
+    }
+
     public void invalidateRefreshToken(String username, String deviceId) {
         refreshTokenStore.remove(username, deviceId);
     }
@@ -120,6 +122,10 @@ public class TokenService {
 
         // You may extract the uuid and scope from the decoded JWT claims if needed
         return generateAccessToken(refreshJwt);
+    }
+
+    public Jwt getJwtFromTokenValue(String token){
+        return jwtDecoder.decode(token);
     }
 
     private String createScope(Authentication authentication) {

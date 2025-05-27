@@ -1,11 +1,9 @@
 package com.mdev.chatcord.server.device.model;
 
-import com.mdev.chatcord.server.BaseEntity;
+import com.mdev.chatcord.server.common.BaseEntity;
 import com.mdev.chatcord.server.user.model.Profile;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.Instant;
 
 @Entity
 @AllArgsConstructor

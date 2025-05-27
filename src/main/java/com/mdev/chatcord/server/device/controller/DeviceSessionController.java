@@ -62,4 +62,11 @@ public class DeviceSessionController {
         return ResponseEntity.ok("Device disconnected successfully");
     }
 
+    @DeleteMapping("/device")
+    public ResponseEntity<?> removeDeviceByAdmin(@RequestParam String email, @RequestParam String deviceId){
+        deviceSessionService.removeDevice(email, deviceId);
+        log.info("DELETION OF DEVICE FROM ACCOUNT WITH EMAIL: {}", email);
+        return ResponseEntity.ok("Device disconnected successfully");
+    }
+
 }

@@ -18,7 +18,7 @@ import java.util.List;
 @ToString
 @Builder
 public class ChatDTO {
-    private ChatType chatType;
+    private String chatType;
     private LocalDateTime createdAt;
     private String lastMessage;
     private LocalDateTime lastMessageAt;
