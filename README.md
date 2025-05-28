@@ -80,7 +80,7 @@ com.chatcord.server
 git clone https://github.com/Mu7ammedProg159/Chatcord-Server.git
 cd Chatcord-Server
 ```
-3. Add RSA keys in `/resources/keys/`  
+3. Add RSA keys in `/resources/keys/` << Currently added by default (Dangerous but for show purposes)
 4. Configure `application.properties` with DB & Redis credentials  
 5. Start the backend:
 ```bash
