@@ -3,6 +3,7 @@ package com.mdev.chatcord.server.chat.controller;
 import com.mdev.chatcord.server.chat.Chat;
 import com.mdev.chatcord.server.chat.ChatRepository;
 import com.mdev.chatcord.server.chat.ChatType;
+import com.mdev.chatcord.server.communication.dto.ChatMemberDTO;
 import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.message.dto.MessageDTO;
@@ -34,11 +35,12 @@ public class ChatController {
     public void sendMessage(MessageDTO message, org.springframework.messaging.Message<?> wsMessage, Principal principal){
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(wsMessage);
 
-        Profile owner = profileRepository.findByUuid(message.getSender())
+        Profile owner = profileRepository.findByUsernameAndTag(message.getSender().getUsername(), message.getSender().getTag())
                 .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
-        Profile receiver = profileRepository.findByUuid(message.getReceiver())
+        Profile receiver = profileRepository.findByUsernameAndTag(message.getReceiver().getUsername(), message.getReceiver().getTag())
                 .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
+
 
         Chat chat = chatRepository.findPrivateChatBetweenUsers(owner.getId(), receiver.getId(), ChatType.PRIVATE)
                 .orElseThrow(() -> new BusinessException(ExceptionCode.CHAT_NOT_FOUND));

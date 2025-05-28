@@ -122,14 +122,14 @@ public class FriendService {
         List<PrivateChatDTO> privateChatDTOList = new ArrayList<>();
 
         for (Friendship friendship : pendingFriendships) {
-            Profile friendProfile = profileRepository.findById(friendship.getOwner().getId())
+            Profile friendProfile = profileRepository.findById(friendship.getFriend().getId())
                     .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND, "Friendship with ID "
                             + friendship.getId() + " not found"));;
 
             privateChatDTOList.add(new PrivateChatDTO(
                             new FriendContactDTO(
                                     friendship.getFriend().getUsername(), friendship.getFriend().getTag(),
-                                    friendship.getFriend().getAvatarUrl(), EFriendStatus.PENDING
+                                    friendship.getFriend().getAvatarUrl(), EFriendStatus.REQUESTED
                             ),
                             privateChatService.retrieveConversation(
                                     uuid, friendship.getFriend().getUsername(),
