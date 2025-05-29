@@ -1,9 +1,8 @@
-package com.mdev.chatcord.server.chat.controller;
+package com.mdev.chatcord.server.chat.core.controller;
 
-import com.mdev.chatcord.server.chat.Chat;
-import com.mdev.chatcord.server.chat.ChatRepository;
-import com.mdev.chatcord.server.chat.ChatType;
-import com.mdev.chatcord.server.communication.dto.ChatMemberDTO;
+import com.mdev.chatcord.server.chat.core.model.Chat;
+import com.mdev.chatcord.server.chat.core.repository.ChatRepository;
+import com.mdev.chatcord.server.chat.core.enums.ChatType;
 import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.message.dto.MessageDTO;

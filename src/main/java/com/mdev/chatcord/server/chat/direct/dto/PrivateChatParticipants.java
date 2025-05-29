@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server.chat.dto;
+package com.mdev.chatcord.server.chat.direct.dto;
 
 import com.mdev.chatcord.server.friend.model.Friendship;
 import com.mdev.chatcord.server.user.model.Profile;

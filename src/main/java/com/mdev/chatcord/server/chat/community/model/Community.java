@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server.chat.guild.model;
+package com.mdev.chatcord.server.chat.community.model;
 
 import com.mdev.chatcord.server.chat.core.model.Chat;
 import com.mdev.chatcord.server.user.model.Account;
@@ -13,15 +13,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class Guild extends Chat {
+public class Community extends Chat {
 
-    private String guildName;
     private String description;
-    private String guildPictureUrl;
-
-    @ManyToOne
-    private Account owner;
-
     private boolean isPublic;
 
     //You may add commanders etc. For roles or maybe other implementations somewhere how-where else.

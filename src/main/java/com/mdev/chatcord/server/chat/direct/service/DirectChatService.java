@@ -1,11 +1,11 @@
-package com.mdev.chatcord.server.chat.service;
+package com.mdev.chatcord.server.chat.direct.service;
 
-import com.mdev.chatcord.server.chat.Chat;
-import com.mdev.chatcord.server.chat.ChatRepository;
-import com.mdev.chatcord.server.chat.ChatType;
-import com.mdev.chatcord.server.chat.dto.ChatDTO;
-import com.mdev.chatcord.server.chat.dto.PrivateChatParticipants;
-import com.mdev.chatcord.server.chat.dto.UnreadStatus;
+import com.mdev.chatcord.server.chat.core.model.Chat;
+import com.mdev.chatcord.server.chat.core.repository.ChatRepository;
+import com.mdev.chatcord.server.chat.core.enums.ChatType;
+import com.mdev.chatcord.server.chat.core.dto.ChatDTO;
+import com.mdev.chatcord.server.chat.direct.dto.PrivateChatParticipants;
+import com.mdev.chatcord.server.chat.core.dto.UnreadStatus;
 import com.mdev.chatcord.server.communication.dto.ChatMemberDTO;
 import com.mdev.chatcord.server.communication.model.ChatMember;
 import com.mdev.chatcord.server.communication.model.ChatRole;
@@ -17,12 +17,10 @@ import com.mdev.chatcord.server.communication.service.PrivilegeType;
 import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.message.model.Message;
-import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import com.mdev.chatcord.server.user.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +29,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
-public class PrivateChatService {
+public class DirectChatService {
     
     private final AccountRepository accountRepository;
     private final ProfileRepository userProfileRepository;

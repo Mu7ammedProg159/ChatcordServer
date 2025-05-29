@@ -1,6 +1,6 @@
 package com.mdev.chatcord.server.message.dto;
 
-import com.mdev.chatcord.server.chat.ChatType;
+import com.mdev.chatcord.server.chat.core.enums.ChatType;
 import com.mdev.chatcord.server.communication.dto.ChatMemberDTO;
 import com.mdev.chatcord.server.message.service.EMessageStatus;
 import lombok.*;

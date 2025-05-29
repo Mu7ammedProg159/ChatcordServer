@@ -1,6 +1,6 @@
 package com.mdev.chatcord.server.communication.model;
 
-import com.mdev.chatcord.server.chat.Chat;
+import com.mdev.chatcord.server.chat.core.model.Chat;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,9 +1,12 @@
-package com.mdev.chatcord.server.chat;
+package com.mdev.chatcord.server.chat.core.model;
 
+import com.mdev.chatcord.server.chat.core.enums.ChatType;
 import com.mdev.chatcord.server.communication.model.ChatMember;
 import com.mdev.chatcord.server.message.model.Message;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -12,11 +15,10 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@AllArgsConstructor
-@NoArgsConstructor
+@Inheritance(strategy = InheritanceType.JOINED)
+@Builder
 @Getter
 @Setter
-@Inheritance(strategy = InheritanceType.JOINED)
 public class Chat {
 
     @Id
@@ -32,6 +34,12 @@ public class Chat {
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL)
     private List<Message> messages = new ArrayList<>(); // All messages in chat
 
+    @OneToOne(fetch = FetchType.LAZY)
+    private Message lastMessageSent;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    private ChatMember lastMessageSender;
+
     @ManyToMany
     @JoinTable(
             joinColumns = @JoinColumn(name = "chat_id"),
@@ -41,11 +49,4 @@ public class Chat {
 
     private LocalDateTime createdAt;
 
-    public Chat(ChatType type, List<ChatMember> members, List<Message> messages, Set<Message> pinnedMessages, LocalDateTime createdAt) {
-        this.type = type;
-        this.members = members;
-        this.messages = messages;
-        this.pinnedMessages = pinnedMessages;
-        this.createdAt = createdAt;
-    }
 }

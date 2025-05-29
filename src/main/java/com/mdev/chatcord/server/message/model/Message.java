@@ -1,9 +1,8 @@
 package com.mdev.chatcord.server.message.model;
 
-import com.mdev.chatcord.server.chat.Chat;
+import com.mdev.chatcord.server.chat.core.model.Chat;
 import com.mdev.chatcord.server.common.BaseEntity;
 import com.mdev.chatcord.server.message.service.EMessageStatus;
-import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.model.Profile;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

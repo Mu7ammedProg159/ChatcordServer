@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server.chat.guild.model;
+package com.mdev.chatcord.server.chat.group.model;
 
 import com.mdev.chatcord.server.chat.core.model.Chat;
 import com.mdev.chatcord.server.user.model.Account;
@@ -13,11 +13,11 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class Guild extends Chat {
+public class Group extends Chat {
 
-    private String guildName;
+    private String groupName;
     private String description;
-    private String guildPictureUrl;
+    private String groupPictureUrl;
 
     @ManyToOne
     private Account owner;

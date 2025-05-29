@@ -1,7 +1,7 @@
-package com.mdev.chatcord.server.chat.controller;
+package com.mdev.chatcord.server.chat.direct.controller;
 
-import com.mdev.chatcord.server.chat.ChatRepository;
-import com.mdev.chatcord.server.friend.repository.FriendRepository;
+import com.mdev.chatcord.server.chat.core.repository.ChatRepository;
+import com.mdev.chatcord.server.friend.repository.FriendshipRepository;
 import com.mdev.chatcord.server.message.repository.MessageRepository;
 import com.mdev.chatcord.server.user.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,11 +12,11 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("api/chat/privates")
 @EnableMethodSecurity
-public class PrivateChatController {
+public class DirectChatController {
 
     private final AccountRepository accountRepository;
     private final MessageRepository messageRepository;
-    private final FriendRepository friendRepository;
+    private final FriendshipRepository friendshipRepository;
     private final ChatRepository chatRepository;
 
 //    @PostMapping("/private")

@@ -1,11 +1,7 @@
-package com.mdev.chatcord.server.chat.dto;
+package com.mdev.chatcord.server.chat.core.dto;
 
-import com.mdev.chatcord.server.chat.ChatType;
 import com.mdev.chatcord.server.communication.dto.ChatMemberDTO;
-import com.mdev.chatcord.server.friend.dto.FriendDTO;
-import com.mdev.chatcord.server.friend.service.EFriendStatus;
 import com.mdev.chatcord.server.message.dto.MessageDTO;
-import com.mdev.chatcord.server.message.model.Message;
 import lombok.*;
 
 import java.time.LocalDateTime;

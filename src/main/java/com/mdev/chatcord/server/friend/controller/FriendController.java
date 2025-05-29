@@ -1,7 +1,7 @@
 package com.mdev.chatcord.server.friend.controller;
 
-import com.mdev.chatcord.server.chat.dto.PrivateChatDTO;
-import com.mdev.chatcord.server.chat.service.PrivateChatService;
+import com.mdev.chatcord.server.chat.direct.dto.PrivateChatDTO;
+import com.mdev.chatcord.server.chat.direct.service.DirectChatService;
 import com.mdev.chatcord.server.friend.service.FriendService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ import java.util.List;
 public class FriendController {
 
     private final FriendService friendService;
-    private final PrivateChatService privateChatService;
+    private final DirectChatService directChatService;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -47,7 +47,7 @@ public class FriendController {
     @GetMapping("/all")
     public ResponseEntity<?> getAllFriends(@AuthenticationPrincipal Jwt jwt){
 
-        List<PrivateChatDTO> friendDTOList = friendService.getAllFriends(jwt.getClaimAsString("uuid"));
+        List<PrivateChatDTO> friendDTOList = friendService.getAllContacts(jwt.getClaimAsString("uuid"));
 
         return ResponseEntity.ok(friendDTOList);
     }

@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Repository
-public interface FriendRepository extends JpaRepository<Friendship, Long> {
+public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
     Optional<Friendship> findByOwnerId(Long id);
     Optional<Friendship> findByOwnerIdAndFriendId(Long owner_id, Long friend_id);
     @Query("SELECT f FROM Friendship f WHERE f.owner.id = :ownerId AND f.friend.username =:friend_username AND f.friend.tag = :friend_tag")
@@ -22,7 +22,7 @@ public interface FriendRepository extends JpaRepository<Friendship, Long> {
                                                     @Param("friend_username") String friend_username,
                                                     @Param("friend_tag") String friend_tag);
 
-    @Query("SELECT f FROM Friendship f where f.owner.id = :ownerId")
+    @Query("SELECT f FROM Friendship f JOIN FETCH f.friend where f.owner.id = :ownerId")
     Page<Friendship> findAllByOwnerId(@Param("ownerId") Long ownerId, Pageable pageable);
 
     @Query("SELECT f FROM Friendship f WHERE f.friendStatus = :friendStatus AND f.friend.id = :friendId")
