@@ -1,8 +1,9 @@
 package com.mdev.chatcord.server.chat.core.repository;
 
+import com.mdev.chatcord.server.chat.core.dto.FriendshipPairDetails;
 import com.mdev.chatcord.server.chat.core.model.Chat;
 import com.mdev.chatcord.server.chat.core.enums.ChatType;
-import com.mdev.chatcord.server.chat.group.model.Group;
+import com.mdev.chatcord.server.chat.group.model.GroupChat;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,10 +21,23 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
     JOIN FETCH c.members m
     WHERE m.profile.id = :profileId
     """)
-    List<Group> findAllGroupChatsByProfileId(@Param("profileId") Long profileId);
+    List<GroupChat> findAllGroupChatsByProfileId(@Param("profileId") Long profileId);
 
     @Query("""
-    SELECT c FROM Chat c
+    SELECT new com.mdev.chatcord.server.chat.core.dto.FriendshipPairDetails(c, m2.profile.id)
+    FROM DirectChat c
+    JOIN c.members m1
+    JOIN c.members m2
+    WHERE c.type = com.mdev.chatcord.server.chat.core.enums.ChatType.PRIVATE
+      AND m1.profile.id = :ownerId
+      AND m2.profile.id IN :friendIds
+      AND m2.profile.id <> :ownerId
+    """)
+    List<FriendshipPairDetails> findPrivateChatsWithFriendId(@Param("ownerId") Long ownerId,
+                                                             @Param("friendIds") List<Long> friendIds);
+
+    @Query("""
+    SELECT c FROM DirectChat c
     JOIN FETCH c.members m
     WHERE c.type = :type
       AND SIZE(c.members) = 2

@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.exception;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,11 @@ public class GlobalExceptionHandleResolver {
     @ExceptionHandler(ConnectException.class)
     public ResponseEntity<Map<String, Object>> handleConnect(ConnectException ex) {
         return errorResponse("8001", "A backend service is unavailable. Try again later.", HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<Map<String, Object>> handleExpiration(ExpiredJwtException ex) {
+        return errorResponse("0002", "SESSION ACCESS TOKEN EXPIRED.", HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(Exception.class)

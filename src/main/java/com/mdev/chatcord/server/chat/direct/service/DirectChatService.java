@@ -6,6 +6,7 @@ import com.mdev.chatcord.server.chat.core.enums.ChatType;
 import com.mdev.chatcord.server.chat.core.dto.ChatDTO;
 import com.mdev.chatcord.server.chat.direct.dto.PrivateChatParticipants;
 import com.mdev.chatcord.server.chat.core.dto.UnreadStatus;
+import com.mdev.chatcord.server.chat.direct.model.DirectChat;
 import com.mdev.chatcord.server.communication.dto.ChatMemberDTO;
 import com.mdev.chatcord.server.communication.model.ChatMember;
 import com.mdev.chatcord.server.communication.model.ChatRole;
@@ -40,7 +41,7 @@ public class DirectChatService {
 
     @Transactional(rollbackFor = Exception.class)
     public ChatDTO createPrivateChat(PrivateChatParticipants participants){
-        Chat receiverChat = new Chat();
+        DirectChat receiverChat = new DirectChat();
         receiverChat.setType(ChatType.PRIVATE);
         receiverChat.setCreatedAt(LocalDateTime.now());
         chatRepository.save(receiverChat);
@@ -88,7 +89,7 @@ public class DirectChatService {
         Profile receiver = userProfileRepository.findByUsernameAndTag(receiverUsername, receiverTag)
                 .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
 
-        Chat chat = chatRepository.findPrivateChatBetweenUsers(
+        DirectChat chat = (DirectChat) chatRepository.findPrivateChatBetweenUsers(
                 sender.getId(),
                 receiver.getId(),
                 ChatType.PRIVATE

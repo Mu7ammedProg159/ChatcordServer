@@ -50,8 +50,8 @@ public class AuthenticationController {
                 authenticationRequest.getPassword(), authenticationRequest.getDeviceDto(), ip));
     }
 
-    @PostMapping("/refresh-key")
-    public ResponseEntity<?> refreshToken(@AuthenticationPrincipal Jwt jwt, Authentication authentication, String deviceId){
+    @PutMapping("/refresh-access")
+    public ResponseEntity<?> refreshToken(@AuthenticationPrincipal Jwt jwt, @RequestParam String deviceId){
         return ResponseEntity.ok(authenticationService.refreshAccessToken(jwt, deviceId));
     }
 

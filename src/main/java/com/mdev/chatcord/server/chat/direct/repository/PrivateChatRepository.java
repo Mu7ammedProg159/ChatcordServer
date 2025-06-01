@@ -6,6 +6,6 @@ import java.util.Optional;
 
 public interface PrivateChatRepository extends JpaRepository<DirectChat, Long> {
 
-    Optional<DirectChat> findByReceiverId(Long id);
+//    Optional<DirectChat> findByReceiverId(Long id);
 
 }

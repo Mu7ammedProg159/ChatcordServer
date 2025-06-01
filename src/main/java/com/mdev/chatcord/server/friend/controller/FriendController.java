@@ -2,6 +2,7 @@ package com.mdev.chatcord.server.friend.controller;
 
 import com.mdev.chatcord.server.chat.direct.dto.PrivateChatDTO;
 import com.mdev.chatcord.server.chat.direct.service.DirectChatService;
+import com.mdev.chatcord.server.friend.dto.ContactPreview;
 import com.mdev.chatcord.server.friend.service.FriendService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/request/users/friend")
+@RequestMapping("/api/request/users/friends")
 @RequiredArgsConstructor
 @EnableMethodSecurity
 public class FriendController {
@@ -25,31 +26,30 @@ public class FriendController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    @GetMapping("/add/{username}/{tag}")
-    public ResponseEntity<?> addFriend(@AuthenticationPrincipal Jwt jwt, @PathVariable String username, @PathVariable String tag){
-
-        PrivateChatDTO privateChatDTO = friendService.addFriend(jwt.getClaimAsString("uuid"), username, tag);
-        return ResponseEntity.ok(privateChatDTO);
+    @GetMapping("/friend/add")
+    public ResponseEntity<?> addFriend(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
+        ContactPreview contactPreview = friendService.addFriend(jwt.getClaimAsString("uuid"), username, tag);
+        return ResponseEntity.ok(contactPreview);
     }
 
-    @GetMapping("/{username}/{tag}")
-    public ResponseEntity<?> requestFriend(@AuthenticationPrincipal Jwt jwt, @PathVariable String username, @PathVariable String tag){
-        PrivateChatDTO privateChatDTO = friendService.getFriendship(jwt.getClaimAsString("uuid"), username, tag);
-        return ResponseEntity.ok(privateChatDTO);
+    @GetMapping("/friend")
+    public ResponseEntity<?> requestFriend(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
+        ContactPreview contactPreview = friendService.getFriendship(jwt.getClaimAsString("uuid"), username, tag);
+        return ResponseEntity.ok(contactPreview);
     }
 
-    @GetMapping("/pending/all")
-    public ResponseEntity<?> retrieveAllPendingFriends(@AuthenticationPrincipal Jwt jwt) {
-        List<PrivateChatDTO> pendingFriends = friendService.getAllPendingFriends(jwt.getClaimAsString("uuid"));
-        return ResponseEntity.ok(pendingFriends);
-    }
+//    @GetMapping("/pending/all")
+//    public ResponseEntity<?> retrieveAllPendingFriends(@AuthenticationPrincipal Jwt jwt) {
+//        List<ContactPreview> pendingFriends = friendService.getAllRequestedFriends(jwt.getClaimAsString("uuid"));
+//        return ResponseEntity.ok(pendingFriends);
+//    }
 
     @GetMapping("/all")
     public ResponseEntity<?> getAllFriends(@AuthenticationPrincipal Jwt jwt){
 
-        List<PrivateChatDTO> friendDTOList = friendService.getAllContacts(jwt.getClaimAsString("uuid"));
+        List<ContactPreview> contacts = friendService.getAllFriends(jwt.getClaimAsString("uuid"));
 
-        return ResponseEntity.ok(friendDTOList);
+        return ResponseEntity.ok(contacts);
     }
 
     @DeleteMapping("/remove")

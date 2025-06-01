@@ -13,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class Group extends Chat {
+public class GroupChat extends Chat {
 
     private String groupName;
     private String description;

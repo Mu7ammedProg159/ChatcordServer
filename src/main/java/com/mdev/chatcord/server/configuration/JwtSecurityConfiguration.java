@@ -77,7 +77,7 @@ public class JwtSecurityConfiguration {
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
         authoritiesConverter.setAuthorityPrefix("ROLE_");
         authoritiesConverter.setAuthoritiesClaimName("scope");
-        authoritiesConverter.setAuthoritiesClaimName("device-id");
+        //authoritiesConverter.setAuthoritiesClaimName("device-id");
 
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);

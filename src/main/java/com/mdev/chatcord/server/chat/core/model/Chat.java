@@ -4,9 +4,7 @@ import com.mdev.chatcord.server.chat.core.enums.ChatType;
 import com.mdev.chatcord.server.communication.model.ChatMember;
 import com.mdev.chatcord.server.message.model.Message;
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,10 +14,10 @@ import java.util.Set;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-@Builder
+@RequiredArgsConstructor
 @Getter
 @Setter
-public class Chat {
+public abstract class Chat {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,9 +34,6 @@ public class Chat {
 
     @OneToOne(fetch = FetchType.LAZY)
     private Message lastMessageSent;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    private ChatMember lastMessageSender;
 
     @ManyToMany
     @JoinTable(

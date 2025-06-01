@@ -1,9 +1,10 @@
 package com.mdev.chatcord.server.friend.service;
 
+import com.mdev.chatcord.server.chat.core.dto.FriendshipPairDetails;
 import com.mdev.chatcord.server.chat.core.model.Chat;
 import com.mdev.chatcord.server.chat.core.repository.ChatRepository;
 import com.mdev.chatcord.server.chat.core.enums.ChatType;
-import com.mdev.chatcord.server.chat.core.dto.ChatDTO;
+import com.mdev.chatcord.server.chat.direct.model.DirectChat;
 import com.mdev.chatcord.server.communication.repository.ChatMemberRepository;
 import com.mdev.chatcord.server.communication.repository.ChatRoleRepository;
 import com.mdev.chatcord.server.exception.*;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -67,13 +69,15 @@ public class FriendService {
                     friendProfile.getId(), ChatType.PRIVATE).orElseThrow(() ->
                     new BusinessException(ExceptionCode.CHAT_NOT_FOUND));
 
+            EFriendStatus viewStatus;
+
             return new ContactPreview(
                     friendship.getFriend().getUuid(),
                     friendProfile.getUsername(),
                     friendProfile.getAvatarUrl(),
                     directChat != null ? (directChat.getLastMessageSent() != null ? directChat.getLastMessageSent().getMessage() : null) : null,
                     directChat != null ? (directChat.getLastMessageSent() != null ? directChat.getLastMessageSent().getSentAt() : null) : null,
-                    directChat != null ? directChat.getLastMessageSender().getProfile().getUsername() : null,
+                    directChat != null ? directChat.getLastMessageSent().getSender().getUsername() : null,
                     false,
                     friendship.getFriendStatus());
         }
@@ -81,54 +85,70 @@ public class FriendService {
 
     // This retrieves all friendships
     @Transactional(rollbackFor = Exception.class)
-    public List<ContactPreview> getAllContacts(String uuid) {
+    public List<ContactPreview> getAllFriends(String uuid) {
         Profile owner = profileRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
                 () -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
-        Page<Friendship> friendships = friendshipRepository.findAllByOwnerId(owner.getId(), Pageable.unpaged());
+        Page<Friendship> friendships = friendshipRepository.findAllByProfileId(owner.getId(), Pageable.unpaged());
+
         List<ContactPreview> contacts = new ArrayList<>();
 
+        List<Long> friendIds = friendships.stream()
+                .map(f -> f.getFriend().getId())
+                .toList();
 
-        // This will be a list of group chats or list of direct chats.
-        var chat = chatRepository.findAllGroupChatsByProfileId(owner.getId());
+        // Batching for better performance rather than Query N + 1 efficiency
+        List<FriendshipPairDetails> friendshipPairDetails = chatRepository.findPrivateChatsWithFriendId(owner.getId(), friendIds);
+
+        // To know which chat with what friend.
+        Map<Long, Chat> chatByFriendId = friendshipPairDetails.stream()
+                .collect(Collectors.toMap(
+                        FriendshipPairDetails::getFriendId,
+                        FriendshipPairDetails::getChat
+                ));
 
         for (Friendship contact: friendships){
+
+            String lastMessage = "No Messages sent yet.";
+            LocalDateTime lastMessageAt = null;
+            String lastMessageSender = "";
+
+            Profile friend = contact.getFriend();
+            EFriendStatus viewStatus = EFriendStatus.PENDING;
+
+            DirectChat directChat = (DirectChat) chatByFriendId.get(contact.getFriend().getId());
+
+            if (directChat != null && directChat.getLastMessageSent() != null){
+                lastMessage = directChat.getLastMessageSent().getMessage();
+                lastMessageAt = directChat.getLastMessageSent().getSentAt();
+                lastMessageSender = directChat.getLastMessageSent().getSender().getUsername();
+            }
+
+            if (contact.getOwner().getId().equals(owner.getId())) {
+                viewStatus = contact.getFriendStatus(); // PENDING, ACCEPTED
+                friend = contact.getFriend();
+            } else {
+                if ( contact.getFriendStatus() == EFriendStatus.PENDING) {
+                    viewStatus = EFriendStatus.REQUESTED; // UI-purpose only
+                    friend = contact.getOwner();
+                } else {
+                    viewStatus =  contact.getFriendStatus(); // ACCEPTED or whatever
+                }
+            }
+
             contacts.add(ContactPreview.builder()
-                            .displayName(contact.getFriend().getUsername(), )
+                            .uuid(friend.getUuid())
+                            .displayName(friend.getUsername())
+                            .avatarUrl(friend.getAvatarUrl())
+                            .lastMessage(lastMessage)
+                            .lastMessageAt(lastMessageAt)
+                            .lastMessageSender(lastMessageSender)
+                            .isGroup(false)
+                            .friendStatus(viewStatus)
                     .build());
         }
 
         return contacts;
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public List<ContactPreview> getAllPendingFriends(String uuid) {
-        Profile currentProfile = profileRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
-                () -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
-
-        // In-Future if database became bigger overtime, must use pagination (+300 Records).
-        List<Friendship> pendingFriendships = friendshipRepository.findAllByFriendStatusAndFriendId(EFriendStatus.PENDING,
-                currentProfile.getId(), Pageable.unpaged()).getContent();
-
-        List<ContactPreview> privateChatDTOList = new ArrayList<>();
-
-        for (Friendship friendship : pendingFriendships) {
-            Profile friendProfile = profileRepository.findById(friendship.getFriend().getId())
-                    .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND, "Friendship with ID "
-                            + friendship.getId() + " not found"));;
-
-            privateChatDTOList.add(new ContactPreview(
-                            new ContactPreview(
-                                    friendship.getFriend().getUsername(), friendship.getFriend().getTag(),
-                                    friendship.getFriend().getAvatarUrl(), EFriendStatus.REQUESTED
-                            ),
-                            privateChatService.retrieveConversation(
-                                    uuid, friendship.getFriend().getUsername(),
-                                    friendship.getFriend().getTag())
-                    )
-            );
-        }
-        return privateChatDTOList;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -154,15 +174,29 @@ public class FriendService {
 
         ContactPreview contactPreview;
 
-        Profile friendProfile = profileRepository.findById(friendship.getFriend().getId())
-                .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
+        DirectChat directChat = (DirectChat) chatRepository.findPrivateChatBetweenUsers(owner.getId(), friendship.getFriend().getId(),
+                ChatType.PRIVATE).orElseThrow(() -> new BusinessException(ExceptionCode.CHAT_NOT_FOUND));
 
-        contactPreview = new ContactPreview(friendship.getFriend().getUsername(), friendship.getFriend().getTag(),
-                friendship.getFriend().getAvatarUrl(), friendship.getFriendStatus());
+        String lastMessage = "No Messages sent yet.";
+        LocalDateTime lastMessageAt = null;
+        String lastMessageSender = "";
 
-        ChatDTO chatDTO = privateChatService.retrieveConversation(uuid, username, tag);
+        if (directChat != null && directChat.getLastMessageSent() != null){
+            lastMessage = directChat.getLastMessageSent().getMessage();
+            lastMessageAt = directChat.getLastMessageSent().getSentAt();
+            lastMessageSender = directChat.getLastMessageSent().getSender().getUsername();
+        }
 
-        return new ContactPreview(contactPreview, chatDTO);
+        return ContactPreview.builder()
+                .uuid(friendship.getFriend().getUuid())
+                .displayName(friendship.getFriend().getUsername())
+                .avatarUrl(friendship.getFriend().getAvatarUrl())
+                .lastMessage(lastMessage)
+                .lastMessageAt(lastMessageAt)
+                .lastMessageSender(lastMessageSender)
+                .isGroup(false)
+                .friendStatus(friendship.getFriendStatus())
+                .build();
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -173,8 +207,7 @@ public class FriendService {
         Profile friend = profileRepository.findByUsernameAndTag(username, tag)
                 .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
 
-        Chat chat = chatRepository.findPrivateChatBetweenUsers(owner.getId(), friend.getId(), ChatType.PRIVATE)
-                .orElseThrow(() -> new BusinessException(ExceptionCode.CHAT_NOT_FOUND));
+        friendshipRepository.deleteFriendship(owner.getId(), friend.getId());
 
         // ChatMember chatMember = chatMemberRepository.findByChatId(chat.getId()).orElseThrow();
 
@@ -185,7 +218,5 @@ public class FriendService {
 
 //        friendRepository.deleteFriendship(owner.getId(), friend.getId());
 //        chatMemberRepository.delete(chatMember);
-        chatRepository.delete(chat);
-
     }
 }

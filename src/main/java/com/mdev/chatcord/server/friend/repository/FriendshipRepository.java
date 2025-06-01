@@ -22,8 +22,8 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
                                                     @Param("friend_username") String friend_username,
                                                     @Param("friend_tag") String friend_tag);
 
-    @Query("SELECT f FROM Friendship f JOIN FETCH f.friend where f.owner.id = :ownerId")
-    Page<Friendship> findAllByOwnerId(@Param("ownerId") Long ownerId, Pageable pageable);
+    @Query("SELECT f FROM Friendship f JOIN FETCH f.friend where f.owner.id = :profileId OR f.friend.id = :profileId")
+    Page<Friendship> findAllByProfileId(@Param("profileId") Long profileId, Pageable pageable);
 
     @Query("SELECT f FROM Friendship f WHERE f.friendStatus = :friendStatus AND f.friend.id = :friendId")
     Page<Friendship> findAllByFriendStatusAndFriendId(@Param("friendStatus") EFriendStatus friendStatus,
