@@ -4,6 +4,7 @@ import com.mdev.chatcord.server.authentication.service.ERoles;
 import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.redis.service.RefreshTokenStore;
+import com.mdev.chatcord.server.token.model.TokenType;
 import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.model.Profile;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,7 @@ public class TokenService {
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(ACCESS_TOKEN_TTL_SECONDS.toSeconds()))
                 .subject(refreshJwt.getSubject())
+                .claim("type", TokenType.ACCESS)
                 .claim("device-id", refreshJwt.getClaimAsString("device-id"))
                 .claim("uuid", refreshJwt.getClaimAsString("uuid"))
                 .claim("scope", refreshJwt.getClaimAsString("scope"))
@@ -89,6 +91,7 @@ public class TokenService {
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(REFRESH_TOKEN_TTL_SECONDS.toSeconds()))
                 .subject(email)
+                .claim("type", TokenType.REFRESH)
                 .claim("device-id", deviceId)
                 .claim("uuid", uuid)
                 .claim("scope", roles.stream().map(Enum::name).collect(Collectors.joining(" ")))

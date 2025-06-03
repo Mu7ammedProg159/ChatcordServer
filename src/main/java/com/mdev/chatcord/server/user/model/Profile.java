@@ -29,6 +29,7 @@ public class Profile extends BaseEntity {
     private String tag = generateTag();
 
     private String avatarUrl;
+    private String avatarHexColor = generateRandomDarkishColor();
     private String quote;
     private String aboutMe;
 
@@ -54,4 +55,15 @@ public class Profile extends BaseEntity {
         int id = random.nextInt(9000) + 1000;
         return String.valueOf(id);
     }
+
+    public static String generateRandomDarkishColor() {
+        Random RANDOM = new Random();
+        float hue = RANDOM.nextFloat(); // full 0.0 to 1.0 range
+        float saturation = 0.5f + RANDOM.nextFloat() * 0.4f; // 0.5 to 0.9
+        float brightness = 0.4f + RANDOM.nextFloat() * 0.4f; // 0.4 to 0.8 (avoids white)
+
+        int rgb = java.awt.Color.HSBtoRGB(hue, saturation, brightness);
+        return String.format("#%06X", (rgb & 0xFFFFFF));
+    }
+
 }

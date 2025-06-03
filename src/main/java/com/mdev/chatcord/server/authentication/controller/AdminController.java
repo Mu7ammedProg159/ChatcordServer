@@ -59,7 +59,7 @@ public class AdminController {
         String email = authenticationRequest.getEmail();
 
         emailService.validateEmailOtp(email);
-        authenticationService.registerUser(authenticationRequest.getEmail(), authenticationRequest.getPassword(), authenticationRequest.getUsername(), ERoles.ADMIN);
+        authenticationService.registerAdminUser(authenticationRequest.getEmail(), authenticationRequest.getPassword(), authenticationRequest.getUsername());
 
         return ResponseEntity.ok("User Registered Successfully, " +
                 "Please Verify your Email Address to avoid losing your account.");

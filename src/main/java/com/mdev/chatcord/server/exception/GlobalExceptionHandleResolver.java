@@ -71,7 +71,7 @@ public class GlobalExceptionHandleResolver {
 
             case EMAIL_NOT_VERIFIED -> HttpStatus.LOCKED;
             case EMAIL_ALREADY_VERIFIED, ACCOUNT_ALREADY_REGISTERED, FRIEND_ALREADY_ADDED -> HttpStatus.CONFLICT;
-            case DEVICE_NOT_RECOGNIZED -> HttpStatus.FORBIDDEN;
+            case DEVICE_NOT_RECOGNIZED, INVALID_ACCESS_TOKEN, INVALID_REFRESH_TOKEN -> HttpStatus.FORBIDDEN;
             case CANNOT_ADD_SELF -> HttpStatus.METHOD_NOT_ALLOWED;
             default -> HttpStatus.BAD_REQUEST;
         };

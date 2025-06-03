@@ -34,12 +34,11 @@ public class UserService {
 
     private final AuthenticationManager authenticationManager;
 
-    private final String default_pfp = "/images/default_pfp.png";
 
     @Transactional(rollbackFor = Exception.class)
     public void createUser(Account account, String username){
 
-        Profile profile = new Profile(username, default_pfp, "What you are thinking today?", "Tell others about you!");
+        Profile profile = new Profile(username, null, "What you are thinking today?", "Tell others about you!");
 
         UserStatus userStatus = new UserStatus(EUserState.OFFLINE);
 
@@ -54,7 +53,7 @@ public class UserService {
                 () -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
         return new ProfileDetails(String.valueOf(profile.getUuid()), profile.getUsername(), profile.getTag(),
-                profile.getUserStatus().getStatus().name(), profile.getAvatarUrl(),
+                profile.getUserStatus().getStatus().name(), profile.getAvatarUrl(), profile.getAvatarHexColor(),
                 profile.getAboutMe(), profile.getQuote());
     }
 

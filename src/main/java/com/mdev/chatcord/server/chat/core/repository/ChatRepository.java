@@ -44,7 +44,7 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
       AND :senderId IN (SELECT m1.profile.id FROM ChatMember m1 WHERE m1.chat = c)
       AND :friendId IN (SELECT m2.profile.id FROM ChatMember m2 WHERE m2.chat = c)
     """)
-    Optional<Chat> findPrivateChatBetweenUsers(@Param("senderId") Long senderId,
+    Chat findPrivateChatBetweenUsers(@Param("senderId") Long senderId,
                                                @Param("friendId") Long friendId,
                                                @Param("type") ChatType type);
 

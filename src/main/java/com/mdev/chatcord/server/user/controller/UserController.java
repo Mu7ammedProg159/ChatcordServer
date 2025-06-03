@@ -1,5 +1,8 @@
 package com.mdev.chatcord.server.user.controller;
 
+import com.mdev.chatcord.server.exception.BusinessException;
+import com.mdev.chatcord.server.exception.ExceptionCode;
+import com.mdev.chatcord.server.token.model.TokenType;
 import com.mdev.chatcord.server.user.dto.ProfileDetails;
 import com.mdev.chatcord.server.user.service.*;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,10 @@ public class UserController {
 
     @GetMapping("/users/me")
     public ResponseEntity<ProfileDetails> getUserProfile(@AuthenticationPrincipal Jwt jwt){
+
+        if (!jwt.getClaim("type").equals(TokenType.ACCESS)){
+            throw new BusinessException(ExceptionCode.INVALID_ACCESS_TOKEN);
+        }
 
         ProfileDetails profileDetailsDTO = userService.getUserProfile(jwt.getClaimAsString("uuid"));
 

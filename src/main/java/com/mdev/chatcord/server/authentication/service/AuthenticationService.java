@@ -1,12 +1,15 @@
 package com.mdev.chatcord.server.authentication.service;
 
 import com.mdev.chatcord.server.authentication.dto.AuthenticationResponse;
+import com.mdev.chatcord.server.communication.repository.ChatMemberRepository;
 import com.mdev.chatcord.server.device.dto.DeviceDto;
+import com.mdev.chatcord.server.device.repository.DeviceSessionRepository;
 import com.mdev.chatcord.server.device.service.DeviceSessionService;
 import com.mdev.chatcord.server.device.service.IpLocationService;
 import com.mdev.chatcord.server.email.service.EmailService;
 import com.mdev.chatcord.server.email.service.OtpService;
 import com.mdev.chatcord.server.exception.*;
+import com.mdev.chatcord.server.friend.repository.FriendshipRepository;
 import com.mdev.chatcord.server.redis.service.RefreshTokenStore;
 import com.mdev.chatcord.server.token.service.TokenService;
 import com.mdev.chatcord.server.user.dto.ProfileDetails;
@@ -35,8 +38,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -44,6 +46,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class  AuthenticationService {
+    private final FriendshipRepository friendshipRepository;
+    private final DeviceSessionRepository deviceSessionRepository;
+    private final ChatMemberRepository chatMemberRepository;
 
     private final EmailService emailService;
     private final UserService userService;
@@ -90,60 +95,22 @@ public class  AuthenticationService {
 
         String refreshToken = null;
 
-//        if (deviceDto.getOS() != null && deviceDto.getOS().equalsIgnoreCase("ReactorNetty/1.2.4")){
-//            deviceDto.setOS(deviceDto.getOS());
-//            deviceDto.setDEVICE_NAME("Web-Browser");
-//        }
-
-        var location = locationService.getLocation(IP_ADDRESS);
-        if (!deviceSessionService.existsForUser(profile, deviceDto.getDEVICE_ID())) {
-            log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}]" +
-                            " with IP ADDRESS: {}.",
-                    profile.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
-                    deviceDto.getOS_VERSION(), IP_ADDRESS);
-
-            refreshToken = tokenService.generateRefreshToken(email, String.valueOf(profile.getUuid()), rolesByEmail, deviceDto.getDEVICE_ID());
-
-            // If this true that means it is the first time logging. EXCEPT if he logged out from all devices.
-            if (deviceSessionService.getDevicesForUser(email).isEmpty()){
-
-                log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}]"
-                                + " from Country: {} and City: {}.",
-                        profile.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
-                        deviceDto.getOS_VERSION(), location.getCountry(), location.getCity());
-
-                deviceSessionService.saveSession(profile, deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(),
-                        deviceDto.getOS(), deviceDto.getOS_VERSION(), IP_ADDRESS);
-            }
-            else {
-                // This is a validation check, NOT YET LOGGED IN.
-               emailService.validateNewDevice(email, deviceDto.getOS(), deviceDto.getDEVICE_NAME(), IP_ADDRESS);
-               throw new BusinessException(ExceptionCode.DEVICE_NOT_RECOGNIZED,
-                       "Suspicious Login in a new device: \n Device: " + deviceDto.getOS() +
-                       " \n DeviceName: " + deviceDto.getDEVICE_NAME() + " \n Country: " +
-                       location.getCountry() + " \n City: " + location.getCity());
-            }
-        }
-        else {
-            refreshToken = tokenService.getRefreshTokenFromRedis(email, deviceDto.getDEVICE_ID());
-        }
+        refreshToken = validateUserAndRetrieveRefreshToken(email, deviceDto, IP_ADDRESS, profile, rolesByEmail);
 
         Jwt refreshJwt = tokenService.getJwtFromTokenValue(refreshToken);
-
         String accessToken = tokenService.generateAccessToken(refreshJwt);
 
-//        userRepository.save(user);
-
+        // Status should only be changed through WebSockets for Real-Time.
         UserStatus userStatus = userStatusRepository.findByProfileId(profile.getId()).orElseThrow();
         userStatus.setStatus(EUserState.ONLINE);
         userStatusRepository.save(userStatus);
         profile.setUserStatus(userStatus);
 
-        log.info("User with this Email Address: [{}] Logged In Successfully. His UUID is: ", auth.getName());
-        log.info("User with this Email Address: [{}] Has these Authorities.", auth.getAuthorities());
+        log.info("User with this Email Address: [{}] Logged In Successfully. His UUID is: {}", auth.getName(), profile.getUuid());
+        log.info("User with this Email Address: [{}] Has these Authorities {}.", auth.getName(), auth.getAuthorities());
 
         ProfileDetails profileDetails = new ProfileDetails(String.valueOf(profile.getUuid()), profile.getUsername(), profile.getTag(),
-                profile.getUserStatus().getStatus().name(), profile.getAvatarUrl(), profile.getAboutMe(), profile.getQuote());
+                profile.getUserStatus().getStatus().name(), profile.getAvatarUrl(), profile.getAvatarHexColor(), profile.getAboutMe(), profile.getQuote());
 
         return new AuthenticationResponse(accessToken, refreshToken, profileDetails);
     }
@@ -176,6 +143,20 @@ public class  AuthenticationService {
 
     }
 
+    public void registerAdminUser(@Valid @Email(message = "Enter a valid email address.") String email, String password,
+                             String username){
+
+        if (emailService.isEmailRegistered(email))
+            throw new BusinessException(ExceptionCode.ACCOUNT_ALREADY_REGISTERED);
+
+        @Null(message = "BAD REQUEST: Something went wrong when adding new friend.")
+        Account account = new Account(email, new BCryptPasswordEncoder().encode(password));
+        account.getRoles().addAll(Set.of(ERoles.ADMIN, ERoles.USER));
+
+        userService.createUser(account, username);
+
+    }
+
     public void logout(String email, String deviceId){
         deviceSessionService.removeDevice(email, deviceId);
         refreshTokenStore.remove(email, deviceId);
@@ -184,7 +165,6 @@ public class  AuthenticationService {
     public void registerUser(@Valid @Email(message = "Enter a valid email address.") String email, String password,
                              String username, ERoles role){
 
-        @Null(message = "BAD REQUEST: Something went wrong when adding new friend.")
         Account account = new Account(email, password);
         account.setPassword(new BCryptPasswordEncoder().encode(account.getPassword()));
         account.getRoles().add(role);
@@ -193,9 +173,81 @@ public class  AuthenticationService {
 
     }
 
+    public void deleteUser(String email){
+        // Delete account if exists
+        Account account = accountRepository.findByEmail(email);
+
+        // Delete profile if exists
+        Optional<Profile> optionalProfile = profileRepository.findByAccountEmail(email);
+        if (optionalProfile.isEmpty()) {
+            if (account != null) accountRepository.delete(account);
+            return;
+        }
+
+        Profile profile = optionalProfile.get();
+        Long profileId = profile.getId();
+
+        // Delete chat member if exists
+        chatMemberRepository.findByProfileId(profileId)
+                .ifPresent(chatMemberRepository::delete);
+
+        // Delete user status if exists
+        userStatusRepository.findByProfileId(profileId)
+                .ifPresent(userStatusRepository::delete);
+
+        // Delete device session if exists
+        deviceSessionRepository.findByProfileId(profileId)
+                .ifPresent(deviceSessionRepository::delete);
+
+        // Delete friendship if exists
+        friendshipRepository.findByOwnerId(profileId)
+                .ifPresent(friendshipRepository::delete);
+
+        // Delete profile and account
+        profileRepository.delete(profile);
+        if (account != null) accountRepository.delete(account);
+    }
+
     private Set<SimpleGrantedAuthority> mapRolesToAuthorities(Set<ERoles> userRoles) {
         return userRoles.stream()
                 .map(roles -> new SimpleGrantedAuthority(roles.name()))
                 .collect(Collectors.toSet());
+    }
+
+    private String validateUserAndRetrieveRefreshToken(String email, DeviceDto deviceDto, String IP_ADDRESS, Profile profile, Set<ERoles> rolesByEmail) {
+        String refreshToken;
+        var location = locationService.getLocation(IP_ADDRESS);
+        if (!deviceSessionService.existsForUser(profile, deviceDto.getDEVICE_ID())) {
+            log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}]" +
+                            " with IP ADDRESS: {}.",
+                    profile.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
+                    deviceDto.getOS_VERSION(), IP_ADDRESS);
+
+            refreshToken = tokenService.generateRefreshToken(email, String.valueOf(profile.getUuid()), rolesByEmail, deviceDto.getDEVICE_ID());
+
+            // If this true that means it is the first time logging. EXCEPT if he logged out from all devices.
+            if (deviceSessionService.getDevicesForUser(email).isEmpty()){
+
+                log.info("Account with UUID: {} tried to login from: [DeviceId: {}, DeviceName: {}, OS: {}, Version: {}]"
+                                + " from Country: {} and City: {}.",
+                        profile.getUuid(), deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(), deviceDto.getOS(),
+                        deviceDto.getOS_VERSION(), location.getCountry(), location.getCity());
+
+                deviceSessionService.saveSession(profile, deviceDto.getDEVICE_ID(), deviceDto.getDEVICE_NAME(),
+                        deviceDto.getOS(), deviceDto.getOS_VERSION(), IP_ADDRESS);
+            }
+            else {
+                // This is a validation check, NOT YET LOGGED IN.
+               emailService.validateNewDevice(email, deviceDto.getOS(), deviceDto.getDEVICE_NAME(), IP_ADDRESS);
+               throw new BusinessException(ExceptionCode.DEVICE_NOT_RECOGNIZED,
+                       "Suspicious Login in a new device: \n Device: " + deviceDto.getOS() +
+                       " \n DeviceName: " + deviceDto.getDEVICE_NAME() + " \n Country: " +
+                       location.getCountry() + " \n City: " + location.getCity());
+            }
+        }
+        else {
+            refreshToken = tokenService.getRefreshTokenFromRedis(email, deviceDto.getDEVICE_ID());
+        }
+        return refreshToken;
     }
 }

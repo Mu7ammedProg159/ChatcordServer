@@ -18,6 +18,7 @@ public class ProfileDetails {
     private String tag;
     private String status;
     private String pfpUrl;
+    private String avatarColor;
     private String about;
     private String quote;
 

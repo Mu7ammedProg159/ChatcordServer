@@ -5,6 +5,8 @@ import lombok.Getter;
 @Getter
 public enum ExceptionCode {
     UNAUTHORIZED("0001", "UNAUTHORIZED: SESSION INVALID."),
+    INVALID_ACCESS_TOKEN("0003", "Invalid Session Key. Session expired, please re-login."),
+    INVALID_REFRESH_TOKEN("0004", "Invalid Reloaded Session Key. Session expired, please re-login."),
     INVALID_EMAIL("1001", "Email address does not exists."),
     ACCOUNT_NOT_FOUND("1002","Account with this email address is not registered."),
     UUID_NOT_FOUND("1003", "Account with this UUID does not exists."),

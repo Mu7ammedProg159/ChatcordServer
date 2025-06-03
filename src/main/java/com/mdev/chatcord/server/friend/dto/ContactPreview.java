@@ -16,6 +16,7 @@ public class ContactPreview {
     UUID uuid; // shared between private and group
     String displayName; // friend's name or group name
     String avatarUrl;
+    String avatarColor;
     String lastMessage;
     LocalDateTime lastMessageAt;
     String lastMessageSender; // name or null if not applicable

@@ -5,6 +5,7 @@ import com.mdev.chatcord.server.user.model.Account;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
@@ -16,5 +17,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     boolean existsByEmail(String email);
 
+    @Transactional
     void deleteByEmail(String email);
 }

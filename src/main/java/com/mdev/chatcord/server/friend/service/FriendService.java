@@ -66,8 +66,7 @@ public class FriendService {
             friendshipRepository.save(friendship);
 
             Chat directChat = chatRepository.findPrivateChatBetweenUsers(ownerProfile.getId(),
-                    friendProfile.getId(), ChatType.PRIVATE).orElseThrow(() ->
-                    new BusinessException(ExceptionCode.CHAT_NOT_FOUND));
+                    friendProfile.getId(), ChatType.PRIVATE);
 
             EFriendStatus viewStatus;
 
@@ -75,8 +74,9 @@ public class FriendService {
                     friendship.getFriend().getUuid(),
                     friendProfile.getUsername(),
                     friendProfile.getAvatarUrl(),
+                    friendProfile.getAvatarHexColor(),
                     directChat != null ? (directChat.getLastMessageSent() != null ? directChat.getLastMessageSent().getMessage() : null) : null,
-                    directChat != null ? (directChat.getLastMessageSent() != null ? directChat.getLastMessageSent().getSentAt() : null) : null,
+                    directChat != null ? (directChat.getLastMessageSent() != null ? directChat.getLastMessageSent().getSentAt() : friendship.getAddedAt()) : friendship.getAddedAt(),
                     directChat != null ? directChat.getLastMessageSent().getSender().getUsername() : null,
                     false,
                     friendship.getFriendStatus());
@@ -110,7 +110,7 @@ public class FriendService {
         for (Friendship contact: friendships){
 
             String lastMessage = "No Messages sent yet.";
-            LocalDateTime lastMessageAt = null;
+            LocalDateTime lastMessageAt = contact.getAddedAt();
             String lastMessageSender = "";
 
             Profile friend = contact.getFriend();
@@ -140,6 +140,7 @@ public class FriendService {
                             .uuid(friend.getUuid())
                             .displayName(friend.getUsername())
                             .avatarUrl(friend.getAvatarUrl())
+                            .avatarColor(friend.getAvatarHexColor())
                             .lastMessage(lastMessage)
                             .lastMessageAt(lastMessageAt)
                             .lastMessageSender(lastMessageSender)
@@ -175,10 +176,10 @@ public class FriendService {
         ContactPreview contactPreview;
 
         DirectChat directChat = (DirectChat) chatRepository.findPrivateChatBetweenUsers(owner.getId(), friendship.getFriend().getId(),
-                ChatType.PRIVATE).orElseThrow(() -> new BusinessException(ExceptionCode.CHAT_NOT_FOUND));
+                ChatType.PRIVATE);
 
         String lastMessage = "No Messages sent yet.";
-        LocalDateTime lastMessageAt = null;
+        LocalDateTime lastMessageAt = friendship.getAddedAt();
         String lastMessageSender = "";
 
         if (directChat != null && directChat.getLastMessageSent() != null){
@@ -191,6 +192,7 @@ public class FriendService {
                 .uuid(friendship.getFriend().getUuid())
                 .displayName(friendship.getFriend().getUsername())
                 .avatarUrl(friendship.getFriend().getAvatarUrl())
+                .avatarColor(friendship.getFriend().getAvatarHexColor())
                 .lastMessage(lastMessage)
                 .lastMessageAt(lastMessageAt)
                 .lastMessageSender(lastMessageSender)

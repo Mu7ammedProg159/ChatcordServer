@@ -18,6 +18,8 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,6 +34,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.UUID;
 
 @Configuration
@@ -80,6 +84,20 @@ public class JwtSecurityConfiguration {
         //authoritiesConverter.setAuthoritiesClaimName("device-id");
 
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+
+        // 🔽 Wrap the default converter with a custom one
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            Collection<GrantedAuthority> authorities = new ArrayList<>(authoritiesConverter.convert(jwt));
+
+            // Inject token type as a pseudo-authority
+            String tokenType = jwt.getClaimAsString("type");
+            if (tokenType != null) {
+                authorities.add(new SimpleGrantedAuthority("TOKEN_TYPE_" + tokenType.toUpperCase()));
+            }
+
+            return authorities;
+        });
+
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
         return jwtAuthenticationConverter;
     }

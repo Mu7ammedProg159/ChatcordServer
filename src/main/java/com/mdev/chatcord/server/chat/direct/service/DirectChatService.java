@@ -93,7 +93,7 @@ public class DirectChatService {
                 sender.getId(),
                 receiver.getId(),
                 ChatType.PRIVATE
-        ).orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
+        );
 
         List<ChatMember> members = chat.getMembers();
         List<ChatMemberDTO> membersDTO = new ArrayList<>();

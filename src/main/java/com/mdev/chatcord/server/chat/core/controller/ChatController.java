@@ -40,8 +40,7 @@ public class ChatController {
         Profile receiver = profileRepository.findByUsernameAndTag(message.getReceiver().getUsername(), message.getReceiver().getTag())
                 .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
 
-        var chat = chatRepository.findPrivateChatBetweenUsers(owner.getId(), receiver.getId(), ChatType.PRIVATE)
-                .orElseThrow(() -> new BusinessException(ExceptionCode.CHAT_NOT_FOUND));
+        var chat = chatRepository.findPrivateChatBetweenUsers(owner.getId(), receiver.getId(), ChatType.PRIVATE);
 
         switch (message.getChatType()){
             case PRIVATE -> {
