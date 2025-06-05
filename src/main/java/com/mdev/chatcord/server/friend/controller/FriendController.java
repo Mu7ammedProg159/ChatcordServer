@@ -62,7 +62,7 @@ public class FriendController {
         return ResponseEntity.ok(contacts);
     }
 
-    @DeleteMapping("/remove")
+    @DeleteMapping("/friend/remove")
     @RequiredAccessToken
     public ResponseEntity<?> deleteFriend(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
         friendService.removeFriend(jwt.getClaimAsString("uuid"), username, tag);

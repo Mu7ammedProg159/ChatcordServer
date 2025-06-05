@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server.configuration;
+package com.mdev.chatcord.server.websocket.configuration;
 
 import com.mdev.chatcord.server.websocket.service.JwtHandshakeInterceptor;
 import lombok.RequiredArgsConstructor;
@@ -31,10 +31,9 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry){
-        registry.addEndpoint("/ws/chat")
+        registry.addEndpoint("/ws/chatcord")
                 .setAllowedOriginPatterns("*")
-                .addInterceptors(jwtHandshakeInterceptor)
-                .withSockJS();
+                .addInterceptors(jwtHandshakeInterceptor);
     }
 
     @Override

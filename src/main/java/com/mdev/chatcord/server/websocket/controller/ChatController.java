@@ -1,6 +1,5 @@
-package com.mdev.chatcord.server.chat.core.controller;
+package com.mdev.chatcord.server.websocket.controller;
 
-import com.mdev.chatcord.server.chat.core.model.Chat;
 import com.mdev.chatcord.server.chat.core.repository.ChatRepository;
 import com.mdev.chatcord.server.chat.core.enums.ChatType;
 import com.mdev.chatcord.server.exception.BusinessException;
@@ -30,7 +29,7 @@ public class ChatController {
     private final ChatRepository chatRepository;
     private final ProfileRepository profileRepository;
 
-    @MessageMapping("/chat.send")
+    @MessageMapping("/chat/direct/message.send")
     public void sendMessage(MessageDTO message, org.springframework.messaging.Message<?> wsMessage, Principal principal){
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(wsMessage);
 

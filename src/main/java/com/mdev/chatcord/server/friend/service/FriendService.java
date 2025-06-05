@@ -56,9 +56,15 @@ public class FriendService {
             throw new BusinessException(ExceptionCode.EMAIL_NOT_VERIFIED,
                     "Please verify your email address to use this feature."); // Not now ..
 
+        // Check if YOU added someone already
         if (friendshipRepository.existsByOwnerIdAndFriendId(ownerProfile.getId(), friendProfile.getId())){
             throw new BusinessException(ExceptionCode.FRIEND_ALREADY_ADDED, "You already added "
                     + friendUsername + "#" + friendTag + " as a friend.");
+        }
+        // Check if SOMEONE added you already
+        else if (friendshipRepository.existsByOwnerIdAndFriendId(friendProfile.getId(), ownerProfile.getId())){
+            throw new BusinessException(ExceptionCode.FRIEND_ALREADY_ADDED, friendProfile.getUsername() + "#"
+                    + friendProfile.getTag() + " already requested friendship with you.");
         }
         else {
 
@@ -73,6 +79,7 @@ public class FriendService {
             return new ContactPreview(
                     friendship.getFriend().getUuid(),
                     friendProfile.getUsername(),
+                    friendProfile.getTag(),
                     friendProfile.getAvatarUrl(),
                     friendProfile.getAvatarHexColor(),
                     directChat != null ? (directChat.getLastMessageSent() != null ? directChat.getLastMessageSent().getMessage() : null) : null,
@@ -139,6 +146,7 @@ public class FriendService {
             contacts.add(ContactPreview.builder()
                             .uuid(friend.getUuid())
                             .displayName(friend.getUsername())
+                            .tag(friend.getTag())
                             .avatarUrl(friend.getAvatarUrl())
                             .avatarColor(friend.getAvatarHexColor())
                             .lastMessage(lastMessage)
@@ -191,6 +199,7 @@ public class FriendService {
         return ContactPreview.builder()
                 .uuid(friendship.getFriend().getUuid())
                 .displayName(friendship.getFriend().getUsername())
+                .tag(friendship.getFriend().getTag())
                 .avatarUrl(friendship.getFriend().getAvatarUrl())
                 .avatarColor(friendship.getFriend().getAvatarHexColor())
                 .lastMessage(lastMessage)

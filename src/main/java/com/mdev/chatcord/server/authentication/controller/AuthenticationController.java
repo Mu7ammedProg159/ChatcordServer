@@ -50,7 +50,9 @@ public class AuthenticationController {
     public ResponseEntity<?> login(@Valid @RequestBody AuthenticationRequest authenticationRequest, HttpServletRequest httpHeaders) {
         DeviceDto deviceDto = authenticationRequest.getDeviceDto();
 
-        if (deviceDto.getOS() == null && deviceDto.getDEVICE_NAME() == null && deviceDto.getOS_VERSION() == null){
+        if (deviceDto.getOS().equalsIgnoreCase("null")
+                && deviceDto.getDEVICE_NAME().equalsIgnoreCase("null")
+                && deviceDto.getOS_VERSION().equalsIgnoreCase("null")){
             deviceDto.setDEVICE_NAME(RequestMetadataUtil.extractUserAgent(httpHeaders));
             deviceDto.setOS("Web-Browser");
             deviceDto.setOS_VERSION("0.0");

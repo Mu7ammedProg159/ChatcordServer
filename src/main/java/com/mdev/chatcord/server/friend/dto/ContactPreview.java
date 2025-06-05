@@ -13,14 +13,15 @@ import java.util.UUID;
 @Setter
 public class ContactPreview {
 
-    UUID uuid; // shared between private and group
-    String displayName; // friend's name or group name
-    String avatarUrl;
-    String avatarColor;
-    String lastMessage;
-    LocalDateTime lastMessageAt;
-    String lastMessageSender; // name or null if not applicable
-    boolean isGroup;
-    EFriendStatus friendStatus; // only if it's a friend, else null
+    private UUID uuid; // shared between private and group
+    private String displayName; // friend's name or group name
+    private String tag; // friend's name or group name
+    private String avatarUrl;
+    private String avatarColor;
+    private String lastMessage;
+    private LocalDateTime lastMessageAt;
+    private String lastMessageSender; // name or null if not applicable
+    private boolean isGroup;
+    private EFriendStatus friendStatus; // only if it's a friend, else null
 
 }

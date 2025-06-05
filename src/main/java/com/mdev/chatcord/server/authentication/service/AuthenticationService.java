@@ -176,11 +176,13 @@ public class  AuthenticationService {
     public void deleteUser(String email){
         // Delete account if exists
         Account account = accountRepository.findByEmail(email);
+        if (account == null)
+            throw new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND);
 
         // Delete profile if exists
         Optional<Profile> optionalProfile = profileRepository.findByAccountEmail(email);
         if (optionalProfile.isEmpty()) {
-            if (account != null) accountRepository.delete(account);
+            accountRepository.delete(account);
             return;
         }
 
