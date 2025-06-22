@@ -1,6 +1,7 @@
 package com.mdev.chatcord.server.websocket.service;
 
 import com.mdev.chatcord.server.token.service.TokenService;
+import com.mdev.chatcord.server.websocket.configuration.UUIDPrinciple;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.server.ServerHttpRequest;
@@ -38,6 +39,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
             String deviceId = jwtFromTokenValue.getClaimAsString("device-id");
 
             attributes.put("username", email); // OR UUID if you prefer
+            servletRequest.getServletRequest().setAttribute("principal", new UUIDPrinciple(uuid));
             attributes.put("uuid", uuid);
             attributes.put("device-id", deviceId);
 

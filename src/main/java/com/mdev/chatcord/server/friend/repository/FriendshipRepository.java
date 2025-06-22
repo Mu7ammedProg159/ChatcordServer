@@ -18,8 +18,12 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
     Optional<Friendship> findByOwnerId(Long id);
     Optional<Friendship> findByOwnerIdAndFriendId(Long owner_id, Long friend_id);
     @Query("SELECT f FROM Friendship f WHERE f.owner.id = :ownerId AND f.friend.username =:friend_username AND f.friend.tag = :friend_tag")
-    Optional<Friendship> findByFriendUsernameAndTag(@Param("ownerId") Long ownerId,
-                                                    @Param("friend_username") String friend_username,
+    Optional<Friendship> findByOwnerIdFriendUsernameAndTag(@Param("ownerId") Long ownerId,
+                                                           @Param("friend_username") String friend_username,
+                                                           @Param("friend_tag") String friend_tag);
+
+    @Query("SELECT f FROM Friendship f WHERE f.friend.username =:friend_username AND f.friend.tag = :friend_tag")
+    Optional<Friendship> findByFriendUsernameAndTag(@Param("friend_username") String friend_username,
                                                     @Param("friend_tag") String friend_tag);
 
     @Query("SELECT f FROM Friendship f JOIN FETCH f.friend where f.owner.id = :profileId OR f.friend.id = :profileId")
@@ -28,6 +32,8 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
     @Query("SELECT f FROM Friendship f WHERE f.friendStatus = :friendStatus AND f.friend.id = :friendId")
     Page<Friendship> findAllByFriendStatusAndFriendId(@Param("friendStatus") EFriendStatus friendStatus,
                                                       @Param("friendId") Long friendId, Pageable pageable);
+
+//    Set<Long> findAllUuidByOwnerId();
 
     boolean existsByOwnerIdAndFriendId(Long owner_id, Long friend_id);
 

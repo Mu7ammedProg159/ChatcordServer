@@ -4,6 +4,7 @@ import com.mdev.chatcord.server.chat.core.dto.FriendshipPairDetails;
 import com.mdev.chatcord.server.chat.core.model.Chat;
 import com.mdev.chatcord.server.chat.core.enums.ChatType;
 import com.mdev.chatcord.server.chat.group.model.GroupChat;
+import com.mdev.chatcord.server.chat.guild.model.Guild;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +16,13 @@ import java.util.Optional;
 
 @Repository
 public interface ChatRepository extends JpaRepository<Chat, Long> {
+
+    @Query("""
+    SELECT c FROM Guild c
+    JOIN FETCH c.members m
+    WHERE m.profile.id = :profileId
+    """)
+    List<Guild> findAllGuildsByProfileId(@Param("profileId") Long profileId);
 
     @Query("""
     SELECT c FROM GroupChat c

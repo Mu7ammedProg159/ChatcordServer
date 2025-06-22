@@ -166,7 +166,7 @@ public class FriendService {
                 .orElseThrow(() -> new BusinessException(ExceptionCode.UUID_NOT_FOUND));
 
         // In-Future if database became bigger overtime, must use pagination (+300 Records).
-        Friendship friendship = friendshipRepository.findByFriendUsernameAndTag(owner.getId(), username, tag).orElseThrow(
+        Friendship friendship = friendshipRepository.findByOwnerIdFriendUsernameAndTag(owner.getId(), username, tag).orElseThrow(
                 () -> new BusinessException(ExceptionCode.FRIENDSHIP_NOT_FOUND));
 
         if (owner.getId().equals(friendship.getFriend().getId()))
@@ -212,10 +212,10 @@ public class FriendService {
 
     @Transactional(rollbackFor = Exception.class)
     public void removeFriend(String uuid, String username, String tag){
-        Profile owner = profileRepository.findByUuid(UUID.fromString(uuid))
+        Profile friend = profileRepository.findByUuid(UUID.fromString(uuid))
                 .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
-        Profile friend = profileRepository.findByUsernameAndTag(username, tag)
+        Profile owner = profileRepository.findByUsernameAndTag(username, tag)
                 .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
 
         friendshipRepository.deleteFriendship(owner.getId(), friend.getId());
@@ -229,5 +229,24 @@ public class FriendService {
 
 //        friendRepository.deleteFriendship(owner.getId(), friend.getId());
 //        chatMemberRepository.delete(chatMember);
+    }
+
+     /** Since you are accepting means you are not the asker for friendship which means SOMEONE asked you to form
+      * friendship, hence you are the friend, and he is the owner.
+     **/
+    public void acceptFriend(String ownerUuid, String username, String tag) {
+
+        Profile friend = profileRepository.findByUuid(UUID.fromString(ownerUuid)).orElseThrow(()
+                -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+
+        Profile owner = profileRepository.findByUsernameAndTag(username, tag).orElseThrow(()
+                -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+
+        Friendship friendship = friendshipRepository.findByOwnerIdFriendUsernameAndTag(owner.getId(),
+                        friend.getUsername(), friend.getTag())
+                .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
+
+        friendship.setFriendStatus(EFriendStatus.ACCEPTED);
+        friendshipRepository.save(friendship);
     }
 }

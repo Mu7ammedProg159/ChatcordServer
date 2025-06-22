@@ -5,6 +5,7 @@ import com.mdev.chatcord.server.chat.direct.service.DirectChatService;
 import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.friend.dto.ContactPreview;
+import com.mdev.chatcord.server.friend.model.Friendship;
 import com.mdev.chatcord.server.friend.service.FriendService;
 import com.mdev.chatcord.server.token.annotation.RequiredAccessToken;
 import com.mdev.chatcord.server.token.model.TokenType;
@@ -19,6 +20,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/request/users/friends")
@@ -60,6 +62,16 @@ public class FriendController {
         List<ContactPreview> contacts = friendService.getAllFriends(jwt.getClaimAsString("uuid"));
 
         return ResponseEntity.ok(contacts);
+    }
+
+    @PutMapping("/friend/accept")
+    @RequiredAccessToken
+    public ResponseEntity<?> acceptFriendship(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
+        String uuid = jwt.getClaimAsString("uuid");
+        friendService.acceptFriend(uuid, username, tag);
+        logger.info("User with UUID: {} successfully accepted user with: Username&Tag: {}#{}.",
+                uuid, username, tag);
+        return ResponseEntity.ok("Now " + username + "#" + tag + " is your friend.");
     }
 
     @DeleteMapping("/friend/remove")

@@ -249,6 +249,10 @@ public class  AuthenticationService {
         }
         else {
             refreshToken = tokenService.getRefreshTokenFromRedis(email, deviceDto.getDEVICE_ID());
+            if (refreshToken == null){
+                refreshToken = tokenService.generateRefreshToken(email, String.valueOf(profile.getUuid()),
+                        rolesByEmail, deviceDto.getDEVICE_ID());
+            }
         }
         return refreshToken;
     }
