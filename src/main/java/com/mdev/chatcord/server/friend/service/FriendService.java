@@ -135,12 +135,14 @@ public class FriendService {
                 viewStatus = contact.getFriendStatus(); // PENDING, ACCEPTED
                 friend = contact.getFriend();
             } else {
+                // If it comes here means the friendee is retrieving his friends.
+                // In short, the friend becomes the owner and the owner becomes the friend.
                 if ( contact.getFriendStatus() == EFriendStatus.PENDING) {
                     viewStatus = EFriendStatus.REQUESTED; // UI-purpose only
-                    friend = contact.getOwner();
                 } else {
                     viewStatus =  contact.getFriendStatus(); // ACCEPTED or whatever
                 }
+                friend = contact.getOwner();
             }
 
             contacts.add(ContactPreview.builder()
