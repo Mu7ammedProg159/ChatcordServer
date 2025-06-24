@@ -9,7 +9,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class AddFriendDTO {
+public class FriendUser {
     private String username;
     private String tag;
 }

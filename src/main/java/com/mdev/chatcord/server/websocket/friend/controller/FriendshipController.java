@@ -4,9 +4,7 @@ import com.mdev.chatcord.server.friend.dto.ContactPreview;
 import com.mdev.chatcord.server.friend.service.FriendService;
 import com.mdev.chatcord.server.user.dto.ProfileDetails;
 import com.mdev.chatcord.server.user.service.UserService;
-import com.mdev.chatcord.server.websocket.friend.dto.AcceptFriendDTO;
-import com.mdev.chatcord.server.websocket.friend.dto.AddFriendDTO;
-import com.nimbusds.jose.crypto.impl.PRFParams;
+import com.mdev.chatcord.server.websocket.friend.dto.FriendUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -27,7 +25,7 @@ public class FriendshipController {
     private final SimpUserRegistry simpUserRegistry;
 
     @MessageMapping("/friend.add")
-    public void addFriend(AddFriendDTO dto, Principal principal){
+    public void addFriend(FriendUser dto, Principal principal){
 
         ContactPreview contactPreview = friendService.getFriendshipRequester(principal.getName(), dto.getUsername(), dto.getTag());
         ProfileDetails friend = userService.getUserProfileByUsernameAndTag(dto.getUsername(), dto.getTag());
@@ -45,9 +43,10 @@ public class FriendshipController {
     }
 
     @MessageMapping("/friend.accept")
-    public void acceptFriendship(Principal principal, AddFriendDTO dto){
-        ContactPreview contactPreview = friendService.getFriendshipRequester(principal.getName(), dto.getUsername(), dto.getTag());
+    public void acceptFriendship(Principal principal, FriendUser dto){
+        ProfileDetails user = userService.getUserProfile(principal.getName());
         ProfileDetails friend = userService.getUserProfileByUsernameAndTag(dto.getUsername(), dto.getTag());
+        ContactPreview contactPreview = friendService.getFriendship(friend.getUuid(), user.getUsername(), user.getTag());
         messagingTemplate.convertAndSendToUser(friend.getUuid(), "/queue/friendship.accept", contactPreview);
     }
 
