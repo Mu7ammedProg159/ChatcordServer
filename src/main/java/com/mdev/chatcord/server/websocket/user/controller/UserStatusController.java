@@ -1,13 +1,6 @@
-package com.mdev.chatcord.server.websocket.controller;
+package com.mdev.chatcord.server.websocket.user.controller;
 
-import com.mdev.chatcord.server.chat.core.repository.ChatRepository;
-import com.mdev.chatcord.server.exception.BusinessException;
-import com.mdev.chatcord.server.exception.ExceptionCode;
-import com.mdev.chatcord.server.message.repository.MessageRepository;
 import com.mdev.chatcord.server.user.dto.UserStatusDetails;
-import com.mdev.chatcord.server.user.model.Profile;
-import com.mdev.chatcord.server.user.model.UserStatus;
-import com.mdev.chatcord.server.user.repository.AccountRepository;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import com.mdev.chatcord.server.user.service.EUserState;
 import com.mdev.chatcord.server.user.service.UserService;

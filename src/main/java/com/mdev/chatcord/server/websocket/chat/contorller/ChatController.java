@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server.websocket.controller;
+package com.mdev.chatcord.server.websocket.chat.contorller;
 
 import com.mdev.chatcord.server.chat.core.repository.ChatRepository;
 import com.mdev.chatcord.server.chat.core.enums.ChatType;

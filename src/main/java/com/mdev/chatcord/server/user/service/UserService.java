@@ -66,6 +66,17 @@ public class UserService {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    public ProfileDetails getUserProfileByUsernameAndTag(String username, String tag){
+
+        Profile profile = profileRepository.findByUsernameAndTag(username, tag).orElseThrow(
+                () -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+
+        return new ProfileDetails(String.valueOf(profile.getUuid()), profile.getUsername(), profile.getTag(),
+                profile.getUserStatus().getStatus().name(), profile.getAvatarUrl(), profile.getAvatarHexColor(),
+                profile.getAboutMe(), profile.getQuote());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
     public Page<UUID> getAllUUID(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
         return profileRepository.findAllByUuid(pageable);

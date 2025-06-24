@@ -213,6 +213,56 @@ public class FriendService {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    public ContactPreview getFriendshipRequester(String uuid, String friendUsername, String friendTag) {
+        Profile owner = profileRepository.findByUuid(UUID.fromString(uuid))
+                .orElseThrow(() -> new BusinessException(ExceptionCode.UUID_NOT_FOUND));
+
+        // In-Future if database became bigger overtime, must use pagination (+300 Records).
+        Friendship friendship = friendshipRepository.findByOwnerIdFriendUsernameAndTag(owner.getId(), friendUsername, friendTag).orElseThrow(
+                () -> new BusinessException(ExceptionCode.FRIENDSHIP_NOT_FOUND));
+
+        if (owner.getId().equals(friendship.getFriend().getId()))
+            throw new BusinessException(ExceptionCode.CANNOT_ADD_SELF); // Works fine.
+
+        if (!owner.getAccount().isAccountNonLocked())
+            throw new BusinessException(ExceptionCode.EMAIL_NOT_VERIFIED,
+                    "Please verify your email address to use this feature."); // Not now ..
+
+        if (!friendshipRepository.existsByOwnerIdAndFriendId(owner.getId(), friendship.getFriend().getId()))
+            throw new BusinessException(ExceptionCode.FRIEND_NOT_FOUND, "Account with username: "
+                    + friendship.getFriend().getUsername() + " and tag: "
+                    + friendship.getFriend().getTag() + " not exists."); //Check this
+
+        ContactPreview contactPreview;
+
+        DirectChat directChat = (DirectChat) chatRepository.findPrivateChatBetweenUsers(owner.getId(), friendship.getFriend().getId(),
+                ChatType.PRIVATE);
+
+        String lastMessage = "No Messages sent yet.";
+        LocalDateTime lastMessageAt = friendship.getAddedAt();
+        String lastMessageSender = "";
+
+        if (directChat != null && directChat.getLastMessageSent() != null){
+            lastMessage = directChat.getLastMessageSent().getMessage();
+            lastMessageAt = directChat.getLastMessageSent().getSentAt();
+            lastMessageSender = directChat.getLastMessageSent().getSender().getUsername();
+        }
+
+        return ContactPreview.builder()
+                .uuid(friendship.getOwner().getUuid())
+                .displayName(friendship.getOwner().getUsername())
+                .tag(friendship.getOwner().getTag())
+                .avatarUrl(friendship.getOwner().getAvatarUrl())
+                .avatarColor(friendship.getOwner().getAvatarHexColor())
+                .lastMessage(lastMessage)
+                .lastMessageAt(lastMessageAt)
+                .lastMessageSender(lastMessageSender)
+                .isGroup(false)
+                .friendStatus(EFriendStatus.REQUESTED)
+                .build();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
     public void removeFriend(String uuid, String username, String tag){
         Profile friend = profileRepository.findByUuid(UUID.fromString(uuid))
                 .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
