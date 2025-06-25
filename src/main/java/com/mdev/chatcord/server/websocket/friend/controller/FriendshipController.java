@@ -42,12 +42,11 @@ public class FriendshipController {
                 contactPreview);
     }
 
-    @MessageMapping("/friend.accept")
+    @MessageMapping("/friend.update")
     public void acceptFriendship(Principal principal, FriendUser dto){
         ProfileDetails user = userService.getUserProfile(principal.getName());
         ProfileDetails friend = userService.getUserProfileByUsernameAndTag(dto.getUsername(), dto.getTag());
-        ContactPreview contactPreview = friendService.getFriendship(friend.getUuid(), user.getUsername(), user.getTag());
-        messagingTemplate.convertAndSendToUser(friend.getUuid(), "/queue/friendship.accept", contactPreview);
+        friendService.updateFriendshipInRealtime(friend, user);
     }
 
 }

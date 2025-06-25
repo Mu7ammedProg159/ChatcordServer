@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -39,7 +40,8 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
 
     @Modifying
     @Transactional
-    @Query("DELETE FROM Friendship f WHERE f.owner.id = :ownerId AND f.friend.id = :friendId")
-    void deleteFriendship(@Param("ownerId") Long ownerId, @Param("friendId") Long friendId);
+    //@Query("DELETE FROM Friendship f WHERE f.owner.id = :ownerId AND f.friend.id = :friendId")
+    @Query("DELETE FROM Friendship f WHERE f.friendStatus = 'DECLINED' AND f.declinedAt < :cutoff")
+    int deleteFriendship(@Param("cutoff") LocalDateTime cutoff);
 
 }

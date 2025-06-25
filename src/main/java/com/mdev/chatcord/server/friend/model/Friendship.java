@@ -12,7 +12,6 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
@@ -29,4 +28,12 @@ public class Friendship extends BaseEntity {
 
     private LocalDateTime addedAt;
 
+    private LocalDateTime declinedAt;
+
+    public Friendship(Profile owner, Profile friend, EFriendStatus friendStatus, LocalDateTime addedAt) {
+        this.owner = owner;
+        this.friend = friend;
+        this.friendStatus = friendStatus;
+        this.addedAt = addedAt;
+    }
 }

@@ -74,11 +74,18 @@ public class FriendController {
         return ResponseEntity.ok("Now " + username + "#" + tag + " is your friend.");
     }
 
-    @DeleteMapping("/friend/remove")
+    @PutMapping("/friend/decline")
     @RequiredAccessToken
-    public ResponseEntity<?> deleteFriend(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
-        friendService.removeFriend(jwt.getClaimAsString("uuid"), username, tag);
-        return ResponseEntity.ok("Friend with name: " + username + " has been deleted successfully");
+    public ResponseEntity<?> declineFriend(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
+        friendService.declineFriend(jwt.getClaimAsString("uuid"), username, tag);
+        return ResponseEntity.ok("Friend with name: " + username + " has been declined successfully");
     }
+
+//    @DeleteMapping("/friend/remove")
+//    @RequiredAccessToken
+//    public ResponseEntity<?> deleteFriend(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
+//        friendService.removeFriend(jwt.getClaimAsString("uuid"), username, tag);
+//        return ResponseEntity.ok("Friend with name: " + username + " has been deleted successfully");
+//    }
 
 }

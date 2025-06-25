@@ -11,14 +11,17 @@ import com.mdev.chatcord.server.exception.*;
 import com.mdev.chatcord.server.friend.dto.ContactPreview;
 import com.mdev.chatcord.server.friend.model.Friendship;
 import com.mdev.chatcord.server.friend.repository.FriendshipRepository;
+import com.mdev.chatcord.server.user.dto.ProfileDetails;
 import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import com.mdev.chatcord.server.user.repository.AccountRepository;
 import com.mdev.chatcord.server.user.repository.UserStatusRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FriendService {
 
     private final AccountRepository accountRepository;
@@ -39,6 +43,7 @@ public class FriendService {
     private final ChatRoleRepository chatRoleRepository;
     private final ChatMemberRepository chatMemberRepository;
 
+    //private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional(rollbackFor = Exception.class)
     public ContactPreview addFriend(@Valid String uuid, String friendUsername, String friendTag){
@@ -145,18 +150,7 @@ public class FriendService {
                 friend = contact.getOwner();
             }
 
-            contacts.add(ContactPreview.builder()
-                            .uuid(friend.getUuid())
-                            .displayName(friend.getUsername())
-                            .tag(friend.getTag())
-                            .avatarUrl(friend.getAvatarUrl())
-                            .avatarColor(friend.getAvatarHexColor())
-                            .lastMessage(lastMessage)
-                            .lastMessageAt(lastMessageAt)
-                            .lastMessageSender(lastMessageSender)
-                            .isGroup(false)
-                            .friendStatus(viewStatus)
-                    .build());
+            contacts.add(createContactPreview(friend, viewStatus, lastMessage, lastMessageAt, lastMessageSender));
         }
 
         return contacts;
@@ -198,18 +192,7 @@ public class FriendService {
             lastMessageSender = directChat.getLastMessageSent().getSender().getUsername();
         }
 
-        return ContactPreview.builder()
-                .uuid(friendship.getFriend().getUuid())
-                .displayName(friendship.getFriend().getUsername())
-                .tag(friendship.getFriend().getTag())
-                .avatarUrl(friendship.getFriend().getAvatarUrl())
-                .avatarColor(friendship.getFriend().getAvatarHexColor())
-                .lastMessage(lastMessage)
-                .lastMessageAt(lastMessageAt)
-                .lastMessageSender(lastMessageSender)
-                .isGroup(false)
-                .friendStatus(friendship.getFriendStatus())
-                .build();
+        return createContactPreview(friendship.getFriend(), friendship.getFriendStatus(), lastMessage, lastMessageAt, lastMessageSender);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -248,57 +231,121 @@ public class FriendService {
             lastMessageSender = directChat.getLastMessageSent().getSender().getUsername();
         }
 
-        return ContactPreview.builder()
-                .uuid(friendship.getOwner().getUuid())
-                .displayName(friendship.getOwner().getUsername())
-                .tag(friendship.getOwner().getTag())
-                .avatarUrl(friendship.getOwner().getAvatarUrl())
-                .avatarColor(friendship.getOwner().getAvatarHexColor())
-                .lastMessage(lastMessage)
-                .lastMessageAt(lastMessageAt)
-                .lastMessageSender(lastMessageSender)
-                .isGroup(false)
-                .friendStatus(EFriendStatus.REQUESTED)
-                .build();
+        return createContactPreview(friendship.getOwner(), EFriendStatus.REQUESTED,
+                lastMessage, lastMessageAt, lastMessageSender);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void removeFriend(String uuid, String username, String tag){
+    public void declineFriend(String uuid, String username, String tag){
         Profile friend = profileRepository.findByUuid(UUID.fromString(uuid))
                 .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
         Profile owner = profileRepository.findByUsernameAndTag(username, tag)
                 .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
 
-        friendshipRepository.deleteFriendship(owner.getId(), friend.getId());
+        Friendship friendship = friendshipRepository.findByOwnerIdFriendUsernameAndTag(owner.getId(), friend.getUsername(), friend.getTag())
+                .orElseThrow(() -> new BusinessException(ExceptionCode.FRIENDSHIP_NOT_FOUND));
 
-        // ChatMember chatMember = chatMemberRepository.findByChatId(chat.getId()).orElseThrow();
+        friendship.setFriendStatus(EFriendStatus.DECLINED);
+        friendship.setDeleted(true);
 
-//        if (chatMember.getRole() != null){
-//            ChatRole chatRole = chatRoleRepository.findById(chatMember.getRole().getId()).orElseThrow();
-//            chatRoleRepository.delete(chatRole);
-//        }
+        LocalDateTime currentDeclineTime = LocalDateTime.now();
 
-//        friendRepository.deleteFriendship(owner.getId(), friend.getId());
-//        chatMemberRepository.delete(chatMember);
+        friendship.setDeclinedAt(currentDeclineTime);
+
+        log.info("Friendship with id {} between user {} and user {} has been declined at {} successfully.",
+                friendship.getId(),
+                friendship.getOwner().getUsername(),
+                friendship.getFriend().getUsername(),
+                currentDeclineTime
+        );
+
+        friendshipRepository.save(friendship);
+
     }
 
      /** Since you are accepting means you are not the asker for friendship which means SOMEONE asked you to form
       * friendship, hence you are the friend, and he is the owner.
      **/
+
+    @Transactional(rollbackFor = Exception.class)
     public void acceptFriend(String ownerUuid, String username, String tag) {
 
-        Profile friend = profileRepository.findByUuid(UUID.fromString(ownerUuid)).orElseThrow(()
+        Profile acceptor = profileRepository.findByUuid(UUID.fromString(ownerUuid)).orElseThrow(()
                 -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
         Profile owner = profileRepository.findByUsernameAndTag(username, tag).orElseThrow(()
                 -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
         Friendship friendship = friendshipRepository.findByOwnerIdFriendUsernameAndTag(owner.getId(),
-                        friend.getUsername(), friend.getTag())
+                        acceptor.getUsername(), acceptor.getTag())
                 .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
 
         friendship.setFriendStatus(EFriendStatus.ACCEPTED);
         friendshipRepository.save(friendship);
+
+        updateFriendshipInRealtime(profileToDtoMapping(owner), profileToDtoMapping(acceptor));
+
     }
+
+    public void updateFriendshipInRealtime(ProfileDetails owner, ProfileDetails acceptor) {
+        ContactPreview contactPreview = getFriendship(owner.getUuid().toLowerCase(), acceptor.getUsername(),
+                acceptor.getTag());
+
+        log.info("{} with uuid: {} {} friendship with {} of uuid: {}",
+                acceptor.getUsername(),
+                acceptor.getUuid().toLowerCase(),
+                contactPreview.getFriendStatus().name().toLowerCase(),
+                owner.getUsername(),
+                owner.getUuid().toLowerCase());
+
+        messagingTemplate.convertAndSendToUser(
+                owner.getUuid().toLowerCase(),
+                "/queue/friendship.update",
+                contactPreview);
+    }
+
+    private ProfileDetails profileToDtoMapping(Profile profile){
+        return new ProfileDetails(profile.getUuid().toString().toLowerCase(), profile.getUsername(), profile.getTag(),
+                profile.getUserStatus().getStatus().name(), profile.getAvatarUrl(), profile.getAvatarHexColor(),
+                profile.getAboutMe(), profile.getQuote());
+    }
+
+    private ContactPreview createContactPreview(Profile friend, EFriendStatus status, String lastMessage,
+                                                LocalDateTime lastMessageAt, String lastMessageSender) {
+        return ContactPreview.builder()
+                .uuid(friend.getUuid())
+                .displayName(friend.getUsername())
+                .tag(friend.getTag())
+                .avatarUrl(friend.getAvatarUrl())
+                .avatarColor(friend.getAvatarHexColor())
+                .lastMessage(lastMessage)
+                .lastMessageAt(lastMessageAt)
+                .lastMessageSender(lastMessageSender)
+                .isGroup(false)
+                .friendStatus(status)
+                .build();
+    }
+
 }
+
+//    @Transactional(rollbackFor = Exception.class)
+//    public void removeFriend(String uuid, String username, String tag){
+//        Profile friend = profileRepository.findByUuid(UUID.fromString(uuid))
+//                .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+//
+//        Profile owner = profileRepository.findByUsernameAndTag(username, tag)
+//                .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
+//
+//        friendshipRepository.deleteFriendship(owner.getId(), friend.getId());
+//
+//        // ChatMember chatMember = chatMemberRepository.findByChatId(chat.getId()).orElseThrow();
+//
+////        if (chatMember.getRole() != null){
+////            ChatRole chatRole = chatRoleRepository.findById(chatMember.getRole().getId()).orElseThrow();
+////            chatRoleRepository.delete(chatRole);
+////        }
+//
+////        friendRepository.deleteFriendship(owner.getId(), friend.getId());
+////        chatMemberRepository.delete(chatMember);
+//    }
