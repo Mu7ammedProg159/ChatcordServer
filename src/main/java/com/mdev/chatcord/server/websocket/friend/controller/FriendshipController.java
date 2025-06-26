@@ -5,6 +5,7 @@ import com.mdev.chatcord.server.friend.service.FriendService;
 import com.mdev.chatcord.server.user.dto.ProfileDetails;
 import com.mdev.chatcord.server.user.service.UserService;
 import com.mdev.chatcord.server.websocket.friend.dto.FriendUser;
+import com.mdev.chatcord.server.websocket.friend.service.FriendInteractionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -21,32 +22,18 @@ public class FriendshipController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final FriendService friendService;
+    private final FriendInteractionService friendInteractionService;
     private final UserService userService;
     private final SimpUserRegistry simpUserRegistry;
 
     @MessageMapping("/friend.add")
     public void addFriend(FriendUser dto, Principal principal){
-
-        ContactPreview contactPreview = friendService.getFriendshipRequester(principal.getName(), dto.getUsername(), dto.getTag());
-        ProfileDetails friend = userService.getUserProfileByUsernameAndTag(dto.getUsername(), dto.getTag());
-
-        log.info("{} with uuid: {} requested friendship with {} of uuid: {}",
-                contactPreview.getDisplayName(),
-                principal.getName(),
-                friend.getUsername(),
-                friend.getUuid().toLowerCase());
-
-        messagingTemplate.convertAndSendToUser(
-                friend.getUuid().toLowerCase(),
-                "/queue/friendship.add",
-                contactPreview);
+        friendInteractionService.addFriendshipInRealtime(principal.getName(), dto.getUsername(), dto.getTag());
     }
 
     @MessageMapping("/friend.update")
     public void acceptFriendship(Principal principal, FriendUser dto){
-        ProfileDetails user = userService.getUserProfile(principal.getName());
-        ProfileDetails friend = userService.getUserProfileByUsernameAndTag(dto.getUsername(), dto.getTag());
-        friendService.updateFriendshipInRealtime(friend, user);
+        friendInteractionService.updateFriendshipInRealtime(principal.getName(), dto.getUsername(), dto.getTag());
     }
 
 }

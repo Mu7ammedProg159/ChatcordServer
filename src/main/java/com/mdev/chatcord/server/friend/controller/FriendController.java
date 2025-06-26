@@ -9,6 +9,7 @@ import com.mdev.chatcord.server.friend.model.Friendship;
 import com.mdev.chatcord.server.friend.service.FriendService;
 import com.mdev.chatcord.server.token.annotation.RequiredAccessToken;
 import com.mdev.chatcord.server.token.model.TokenType;
+import com.mdev.chatcord.server.websocket.friend.service.FriendInteractionService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ import java.util.UUID;
 public class FriendController {
 
     private final FriendService friendService;
+    private final FriendInteractionService friendInteractionService;
     private final DirectChatService directChatService;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -36,8 +38,8 @@ public class FriendController {
     @GetMapping("/friend/add")
     @RequiredAccessToken
     public ResponseEntity<?> addFriend(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
-
         ContactPreview contactPreview = friendService.addFriend(jwt.getClaimAsString("uuid"), username, tag);
+        friendInteractionService.addFriendshipInRealtime(jwt.getClaimAsString("uuid"), username, tag);
         return ResponseEntity.ok(contactPreview);
     }
 
@@ -69,6 +71,7 @@ public class FriendController {
     public ResponseEntity<?> acceptFriendship(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
         String uuid = jwt.getClaimAsString("uuid");
         friendService.acceptFriend(uuid, username, tag);
+        friendInteractionService.updateFriendshipInRealtime(uuid, username, tag);
         logger.info("User with UUID: {} successfully accepted user with: Username&Tag: {}#{}.",
                 uuid, username, tag);
         return ResponseEntity.ok("Now " + username + "#" + tag + " is your friend.");
@@ -78,6 +81,7 @@ public class FriendController {
     @RequiredAccessToken
     public ResponseEntity<?> declineFriend(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
         friendService.declineFriend(jwt.getClaimAsString("uuid"), username, tag);
+        friendInteractionService.updateFriendshipInRealtime(jwt.getClaimAsString("uuid"), username, tag);
         return ResponseEntity.ok("Friend with name: " + username + " has been declined successfully");
     }
 

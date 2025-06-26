@@ -284,31 +284,8 @@ public class FriendService {
         friendship.setFriendStatus(EFriendStatus.ACCEPTED);
         friendshipRepository.save(friendship);
 
-        updateFriendshipInRealtime(profileToDtoMapping(owner), profileToDtoMapping(acceptor));
+        //updateFriendshipInRealtime(profileToDtoMapping(owner), profileToDtoMapping(acceptor));
 
-    }
-
-    public void updateFriendshipInRealtime(ProfileDetails owner, ProfileDetails acceptor) {
-        ContactPreview contactPreview = getFriendship(owner.getUuid().toLowerCase(), acceptor.getUsername(),
-                acceptor.getTag());
-
-        log.info("{} with uuid: {} {} friendship with {} of uuid: {}",
-                acceptor.getUsername(),
-                acceptor.getUuid().toLowerCase(),
-                contactPreview.getFriendStatus().name().toLowerCase(),
-                owner.getUsername(),
-                owner.getUuid().toLowerCase());
-
-        messagingTemplate.convertAndSendToUser(
-                owner.getUuid().toLowerCase(),
-                "/queue/friendship.update",
-                contactPreview);
-    }
-
-    private ProfileDetails profileToDtoMapping(Profile profile){
-        return new ProfileDetails(profile.getUuid().toString().toLowerCase(), profile.getUsername(), profile.getTag(),
-                profile.getUserStatus().getStatus().name(), profile.getAvatarUrl(), profile.getAvatarHexColor(),
-                profile.getAboutMe(), profile.getQuote());
     }
 
     private ContactPreview createContactPreview(Profile friend, EFriendStatus status, String lastMessage,
