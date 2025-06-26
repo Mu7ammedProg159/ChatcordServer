@@ -288,6 +288,41 @@ public class FriendService {
 
     }
 
+    private ContactPreview createFriendship(Profile owner, Friendship friendship){
+        if (owner.getId().equals(friendship.getFriend().getId()))
+            throw new BusinessException(ExceptionCode.CANNOT_ADD_SELF); // Works fine.
+
+        if (!owner.getAccount().isAccountNonLocked())
+            throw new BusinessException(ExceptionCode.EMAIL_NOT_VERIFIED,
+                    "Please verify your email address to use this feature."); // Not now ..
+
+        if (!friendshipRepository.existsByOwnerIdAndFriendId(owner.getId(), friendship.getFriend().getId()))
+            throw new BusinessException(ExceptionCode.FRIEND_NOT_FOUND, "Account with username: "
+                    + friendship.getFriend().getUsername() + " and tag: "
+                    + friendship.getFriend().getTag() + " not exists."); //Check this
+
+        DirectChat directChat = (DirectChat) chatRepository.findPrivateChatBetweenUsers(owner.getId(), friendship.getFriend().getId(),
+                ChatType.PRIVATE);
+
+        String lastMessage = "No Messages sent yet.";
+        LocalDateTime lastMessageAt = friendship.getAddedAt();
+        String lastMessageSender = "";
+
+        if (directChat != null && directChat.getLastMessageSent() != null){
+            lastMessage = directChat.getLastMessageSent().getMessage();
+            lastMessageAt = directChat.getLastMessageSent().getSentAt();
+            lastMessageSender = directChat.getLastMessageSent().getSender().getUsername();
+        }
+
+        if (friendship.getOwner().getId().equals(owner.getId())) {
+            return createContactPreview(friendship.getFriend(), friendship.getFriendStatus(),
+                    lastMessage, lastMessageAt, lastMessageSender);
+        } else {
+            return createContactPreview(friendship.getOwner(), friendship.getFriendStatus(),
+                    lastMessage, lastMessageAt, lastMessageSender);
+        }
+    }
+
     private ContactPreview createContactPreview(Profile friend, EFriendStatus status, String lastMessage,
                                                 LocalDateTime lastMessageAt, String lastMessageSender) {
         return ContactPreview.builder()

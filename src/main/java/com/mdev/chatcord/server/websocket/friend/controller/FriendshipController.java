@@ -2,10 +2,9 @@ package com.mdev.chatcord.server.websocket.friend.controller;
 
 import com.mdev.chatcord.server.friend.dto.ContactPreview;
 import com.mdev.chatcord.server.friend.service.FriendService;
-import com.mdev.chatcord.server.user.dto.ProfileDetails;
 import com.mdev.chatcord.server.user.service.UserService;
 import com.mdev.chatcord.server.websocket.friend.dto.FriendUser;
-import com.mdev.chatcord.server.websocket.friend.service.FriendInteractionService;
+import com.mdev.chatcord.server.websocket.friend.service.FriendNotifierService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -22,18 +21,20 @@ public class FriendshipController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final FriendService friendService;
-    private final FriendInteractionService friendInteractionService;
+    private final FriendNotifierService friendNotifierService;
     private final UserService userService;
     private final SimpUserRegistry simpUserRegistry;
 
     @MessageMapping("/friend.add")
-    public void addFriend(FriendUser dto, Principal principal){
-        friendInteractionService.addFriendshipInRealtime(principal.getName(), dto.getUsername(), dto.getTag());
+    public void addFriend(Principal principal, ContactPreview receiver){
+        ContactPreview requester = friendService.getFriendshipRequester(principal.getName(),
+                receiver.getDisplayName(), receiver.getTag());
+        friendNotifierService.addFriendshipInRealtime(requester, receiver);
     }
 
     @MessageMapping("/friend.update")
     public void acceptFriendship(Principal principal, FriendUser dto){
-        friendInteractionService.updateFriendshipInRealtime(principal.getName(), dto.getUsername(), dto.getTag());
+        friendNotifierService.updateFriendshipInRealtime(principal.getName(), dto.getUsername(), dto.getTag());
     }
 
 }

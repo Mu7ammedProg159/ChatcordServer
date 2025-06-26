@@ -13,26 +13,24 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class FriendInteractionService {
+public class FriendNotifierService {
 
     private final SimpMessagingTemplate messagingTemplate;
-    private final UserService userService;
-    private final FriendService friendService;
 
-    public void addFriendshipInRealtime(String uuid, String username, String tag){
-        ContactPreview contactPreview = friendService.getFriendshipRequester(uuid, username, tag);
-        ProfileDetails friend = userService.getUserProfileByUsernameAndTag(username, tag);
+    public void addFriendshipInRealtime(ContactPreview requesterContact, ContactPreview receiverContact){
 
         log.info("{} with uuid: {} requested friendship with {} of uuid: {}",
-                contactPreview.getDisplayName(),
-                uuid,
-                friend.getUsername(),
-                friend.getUuid().toLowerCase());
+                requesterContact.getDisplayName(),
+                requesterContact.getUuid().toString().toLowerCase(),
+                receiverContact.getDisplayName(),
+                receiverContact.getUuid().toString().toLowerCase());
 
+        // Reason why we passed requester is because we are saying here,
+        // Hey, I am requesting friendship to you (receiver.uuid), these are my information (requesterContact).
         messagingTemplate.convertAndSendToUser(
-                friend.getUuid().toLowerCase(),
+                receiverContact.getUuid().toString().toLowerCase(),
                 "/queue/friendship.add",
-                contactPreview);
+                requesterContact);
     }
 
     public void updateFriendshipInRealtime(String uuid, String username, String tag) {
