@@ -33,24 +33,18 @@ public class FriendNotifierService {
                 requesterContact);
     }
 
-    public void updateFriendshipInRealtime(String uuid, String username, String tag) {
-
-        ProfileDetails acceptor = userService.getUserProfile(uuid);
-        ProfileDetails owner = userService.getUserProfileByUsernameAndTag(username, tag);
-
-        ContactPreview contactPreview = friendService.getFriendship(owner.getUuid().toLowerCase(), acceptor.getUsername(),
-                acceptor.getTag());
+    public void updateFriendshipInRealtime(ContactPreview requester, ContactPreview receiver) {
 
         log.info("{} with uuid: {} {} friendship with {} of uuid: {}",
-                acceptor.getUsername(),
-                acceptor.getUuid().toLowerCase(),
-                contactPreview.getFriendStatus().name().toLowerCase(),
-                owner.getUsername(),
-                owner.getUuid().toLowerCase());
+                receiver.getDisplayName(),
+                receiver.getUuid().toString().toLowerCase(),
+                requester.getFriendStatus().name().toLowerCase(),
+                requester.getDisplayName(),
+                requester.getUuid().toString().toLowerCase());
 
         messagingTemplate.convertAndSendToUser(
-                owner.getUuid().toLowerCase(),
+                receiver.getUuid().toString().toLowerCase(),
                 "/queue/friendship.update",
-                contactPreview);
+                requester);
     }
 }

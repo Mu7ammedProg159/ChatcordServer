@@ -165,34 +165,7 @@ public class FriendService {
         Friendship friendship = friendshipRepository.findByOwnerIdFriendUsernameAndTag(owner.getId(), username, tag).orElseThrow(
                 () -> new BusinessException(ExceptionCode.FRIENDSHIP_NOT_FOUND));
 
-        if (owner.getId().equals(friendship.getFriend().getId()))
-            throw new BusinessException(ExceptionCode.CANNOT_ADD_SELF); // Works fine.
-
-        if (!owner.getAccount().isAccountNonLocked())
-            throw new BusinessException(ExceptionCode.EMAIL_NOT_VERIFIED,
-                    "Please verify your email address to use this feature."); // Not now ..
-
-        if (!friendshipRepository.existsByOwnerIdAndFriendId(owner.getId(), friendship.getFriend().getId()))
-            throw new BusinessException(ExceptionCode.FRIEND_NOT_FOUND, "Account with username: "
-                    + friendship.getFriend().getUsername() + " and tag: "
-                    + friendship.getFriend().getTag() + " not exists."); //Check this
-
-        ContactPreview contactPreview;
-
-        DirectChat directChat = (DirectChat) chatRepository.findPrivateChatBetweenUsers(owner.getId(), friendship.getFriend().getId(),
-                ChatType.PRIVATE);
-
-        String lastMessage = "No Messages sent yet.";
-        LocalDateTime lastMessageAt = friendship.getAddedAt();
-        String lastMessageSender = "";
-
-        if (directChat != null && directChat.getLastMessageSent() != null){
-            lastMessage = directChat.getLastMessageSent().getMessage();
-            lastMessageAt = directChat.getLastMessageSent().getSentAt();
-            lastMessageSender = directChat.getLastMessageSent().getSender().getUsername();
-        }
-
-        return createContactPreview(friendship.getFriend(), friendship.getFriendStatus(), lastMessage, lastMessageAt, lastMessageSender);
+        return createFriendship(owner, friendship);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -201,42 +174,14 @@ public class FriendService {
                 .orElseThrow(() -> new BusinessException(ExceptionCode.UUID_NOT_FOUND));
 
         // In-Future if database became bigger overtime, must use pagination (+300 Records).
-        Friendship friendship = friendshipRepository.findByOwnerIdFriendUsernameAndTag(owner.getId(), friendUsername, friendTag).orElseThrow(
-                () -> new BusinessException(ExceptionCode.FRIENDSHIP_NOT_FOUND));
+        Friendship friendship = friendshipRepository.findByOwnerIdFriendUsernameAndTag(owner.getId(), friendUsername,
+                friendTag).orElseThrow(() -> new BusinessException(ExceptionCode.FRIENDSHIP_NOT_FOUND));
 
-        if (owner.getId().equals(friendship.getFriend().getId()))
-            throw new BusinessException(ExceptionCode.CANNOT_ADD_SELF); // Works fine.
-
-        if (!owner.getAccount().isAccountNonLocked())
-            throw new BusinessException(ExceptionCode.EMAIL_NOT_VERIFIED,
-                    "Please verify your email address to use this feature."); // Not now ..
-
-        if (!friendshipRepository.existsByOwnerIdAndFriendId(owner.getId(), friendship.getFriend().getId()))
-            throw new BusinessException(ExceptionCode.FRIEND_NOT_FOUND, "Account with username: "
-                    + friendship.getFriend().getUsername() + " and tag: "
-                    + friendship.getFriend().getTag() + " not exists."); //Check this
-
-        ContactPreview contactPreview;
-
-        DirectChat directChat = (DirectChat) chatRepository.findPrivateChatBetweenUsers(owner.getId(), friendship.getFriend().getId(),
-                ChatType.PRIVATE);
-
-        String lastMessage = "No Messages sent yet.";
-        LocalDateTime lastMessageAt = friendship.getAddedAt();
-        String lastMessageSender = "";
-
-        if (directChat != null && directChat.getLastMessageSent() != null){
-            lastMessage = directChat.getLastMessageSent().getMessage();
-            lastMessageAt = directChat.getLastMessageSent().getSentAt();
-            lastMessageSender = directChat.getLastMessageSent().getSender().getUsername();
-        }
-
-        return createContactPreview(friendship.getOwner(), EFriendStatus.REQUESTED,
-                lastMessage, lastMessageAt, lastMessageSender);
+        return createFriendship(owner, friendship);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void declineFriend(String uuid, String username, String tag){
+    public ContactPreview declineFriend(String uuid, String username, String tag){
         Profile friend = profileRepository.findByUuid(UUID.fromString(uuid))
                 .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
@@ -262,6 +207,8 @@ public class FriendService {
 
         friendshipRepository.save(friendship);
 
+        return createFriendship(owner, friendship);
+
     }
 
      /** Since you are accepting means you are not the asker for friendship which means SOMEONE asked you to form
@@ -269,7 +216,7 @@ public class FriendService {
      **/
 
     @Transactional(rollbackFor = Exception.class)
-    public void acceptFriend(String ownerUuid, String username, String tag) {
+    public ContactPreview acceptFriend(String ownerUuid, String username, String tag) {
 
         Profile acceptor = profileRepository.findByUuid(UUID.fromString(ownerUuid)).orElseThrow(()
                 -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
@@ -284,7 +231,7 @@ public class FriendService {
         friendship.setFriendStatus(EFriendStatus.ACCEPTED);
         friendshipRepository.save(friendship);
 
-        //updateFriendshipInRealtime(profileToDtoMapping(owner), profileToDtoMapping(acceptor));
+        return createFriendship(owner, friendship);
 
     }
 
@@ -299,7 +246,7 @@ public class FriendService {
         if (!friendshipRepository.existsByOwnerIdAndFriendId(owner.getId(), friendship.getFriend().getId()))
             throw new BusinessException(ExceptionCode.FRIEND_NOT_FOUND, "Account with username: "
                     + friendship.getFriend().getUsername() + " and tag: "
-                    + friendship.getFriend().getTag() + " not exists."); //Check this
+                    + friendship.getFriend().getTag() + " not exists.");
 
         DirectChat directChat = (DirectChat) chatRepository.findPrivateChatBetweenUsers(owner.getId(), friendship.getFriend().getId(),
                 ChatType.PRIVATE);

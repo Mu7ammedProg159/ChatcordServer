@@ -79,8 +79,12 @@ public class FriendController {
     @PutMapping("/friend/decline")
     @RequiredAccessToken
     public ResponseEntity<?> declineFriend(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
-        friendService.declineFriend(jwt.getClaimAsString("uuid"), username, tag);
-        friendNotifierService.updateFriendshipInRealtime(jwt.getClaimAsString("uuid"), username, tag);
+        String uuid = jwt.getClaimAsString("uuid");
+
+        ContactPreview declinedContact = friendService.declineFriend(uuid, username, tag);
+        ContactPreview requester = friendService.getFriendshipRequester(uuid, username, tag);
+        friendNotifierService.updateFriendshipInRealtime(uuid, username, tag);
+
         return ResponseEntity.ok("Friend with name: " + username + " has been declined successfully");
     }
 
