@@ -17,6 +17,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Getter
 @Setter
+@Builder
+@AllArgsConstructor
 public abstract class Chat {
 
     @Id

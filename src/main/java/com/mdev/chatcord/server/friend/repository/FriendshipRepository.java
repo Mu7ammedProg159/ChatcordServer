@@ -1,7 +1,7 @@
 package com.mdev.chatcord.server.friend.repository;
 
 import com.mdev.chatcord.server.friend.model.Friendship;
-import com.mdev.chatcord.server.friend.service.EFriendStatus;
+import com.mdev.chatcord.server.friend.enums.EFriendStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -22,6 +23,14 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
     Optional<Friendship> findByOwnerIdFriendUsernameAndTag(@Param("ownerId") Long ownerId,
                                                            @Param("friend_username") String friend_username,
                                                            @Param("friend_tag") String friend_tag);
+
+    @Query(
+            """ 
+               SELECT f FROM Friendship f
+               WHERE f.owner.id = :ownerId AND f.friend.id =:friendId
+               OR f.friend.id = :ownerId AND f.owner.id =:friendId
+            """)
+    Optional<Friendship> findByOwnerIdFriendId(@Param("ownerId") Long ownerId, @Param("friendId") Long friendId);
 
     @Query("SELECT f FROM Friendship f WHERE f.friend.username =:friend_username AND f.friend.tag = :friend_tag")
     Optional<Friendship> findByFriendUsernameAndTag(@Param("friend_username") String friend_username,
@@ -37,6 +46,13 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
 //    Set<Long> findAllUuidByOwnerId();
 
     boolean existsByOwnerIdAndFriendId(Long owner_id, Long friend_id);
+
+    @Query("""
+    SELECT f
+    FROM Friendship f
+    WHERE f.friendStatus = 'DECLINED' AND f.declinedAt < :cutoff
+    """)
+    List<Friendship> findDeclinedFriendships(@Param("cutoff") LocalDateTime cutoff);
 
     @Modifying
     @Transactional

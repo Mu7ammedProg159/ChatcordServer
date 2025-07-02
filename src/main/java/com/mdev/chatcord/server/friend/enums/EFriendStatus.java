@@ -1,4 +1,4 @@
-package com.mdev.chatcord.server.friend.service;
+package com.mdev.chatcord.server.friend.enums;
 
 public enum EFriendStatus {
     PENDING,

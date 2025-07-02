@@ -1,10 +1,12 @@
 package com.mdev.chatcord.server.friend.controller;
 
 import com.mdev.chatcord.server.chat.direct.service.DirectChatService;
+import com.mdev.chatcord.server.friend.dto.ContactPair;
 import com.mdev.chatcord.server.friend.dto.ContactPreview;
 import com.mdev.chatcord.server.friend.service.FriendService;
+import com.mdev.chatcord.server.friend.service.FriendServiceImpl;
 import com.mdev.chatcord.server.token.annotation.RequiredAccessToken;
-import com.mdev.chatcord.server.websocket.friend.service.FriendNotifierService;
+import com.mdev.chatcord.server.websocket.friend.service.FriendNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +25,7 @@ import java.util.List;
 public class FriendController {
 
     private final FriendService friendService;
-    private final FriendNotifierService friendNotifierService;
+    private final FriendNotificationService friendNotificationService;
     private final DirectChatService directChatService;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -33,46 +35,34 @@ public class FriendController {
     public ResponseEntity<?> addFriend(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
         String uuid = jwt.getClaimAsString("uuid");
 
-        ContactPreview requesterContact = friendService.addFriend(uuid, username, tag);
-        ContactPreview receiverContact = friendService.getFriendshipRequester(uuid, username, tag);
+        ContactPair participants = friendService.add(uuid, username, tag);
 
-        friendNotifierService.addFriendshipInRealtime(requesterContact, receiverContact);
-        return ResponseEntity.ok(requesterContact);
+        friendNotificationService.addFriendshipInRealtime(participants.getRequester(), participants.getReceiver());
+        return ResponseEntity.ok(participants.getReceiver());
     }
 
     @GetMapping("/friend")
     @RequiredAccessToken
     public ResponseEntity<?> requestFriend(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
-
-        ContactPreview contactPreview = friendService.getFriendship(jwt.getClaimAsString("uuid"), username, tag);
-        return ResponseEntity.ok(contactPreview);
+        return ResponseEntity.ok(friendService.retrieveFriendship(jwt.getClaimAsString("uuid"), username, tag));
     }
-
-//    @GetMapping("/pending/all")
-//    public ResponseEntity<?> retrieveAllPendingFriends(@AuthenticationPrincipal Jwt jwt) {
-//        List<ContactPreview> pendingFriends = friendService.getAllRequestedFriends(jwt.getClaimAsString("uuid"));
-//        return ResponseEntity.ok(pendingFriends);
-//    }
 
     @GetMapping("/all")
     @RequiredAccessToken
     public ResponseEntity<?> getAllFriends(@AuthenticationPrincipal Jwt jwt){
-
-        List<ContactPreview> contacts = friendService.getAllFriends(jwt.getClaimAsString("uuid"));
-
-        return ResponseEntity.ok(contacts);
+        return ResponseEntity.ok(friendService.retrieveAllFriendships(jwt.getClaimAsString("uuid")));
     }
 
     @PutMapping("/friend/accept")
     @RequiredAccessToken
     public ResponseEntity<?> acceptFriendship(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
         String uuid = jwt.getClaimAsString("uuid");
-        friendService.acceptFriend(uuid, username, tag);
 
-        friendNotifierService.updateFriendshipInRealtime(uuid, username, tag);
-
+        ContactPair participants = friendService.accept(uuid, username, tag);
+        friendNotificationService.updateFriendshipInRealtime(participants.getRequester(), participants.getReceiver());
         logger.info("User with UUID: {} successfully accepted user with: Username&Tag: {}#{}.",
                 uuid, username, tag);
+
         return ResponseEntity.ok("Now " + username + "#" + tag + " is your friend.");
     }
 
@@ -81,18 +71,10 @@ public class FriendController {
     public ResponseEntity<?> declineFriend(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
         String uuid = jwt.getClaimAsString("uuid");
 
-        ContactPreview declinedContact = friendService.declineFriend(uuid, username, tag);
-        ContactPreview requester = friendService.getFriendshipRequester(uuid, username, tag);
-        friendNotifierService.updateFriendshipInRealtime(uuid, username, tag);
+        ContactPair participants = friendService.decline(uuid, username, tag);
+        friendNotificationService.updateFriendshipInRealtime(participants.getRequester(), participants.getReceiver());
 
         return ResponseEntity.ok("Friend with name: " + username + " has been declined successfully");
     }
-
-//    @DeleteMapping("/friend/remove")
-//    @RequiredAccessToken
-//    public ResponseEntity<?> deleteFriend(@AuthenticationPrincipal Jwt jwt, @RequestParam String username, @RequestParam String tag){
-//        friendService.removeFriend(jwt.getClaimAsString("uuid"), username, tag);
-//        return ResponseEntity.ok("Friend with name: " + username + " has been deleted successfully");
-//    }
 
 }

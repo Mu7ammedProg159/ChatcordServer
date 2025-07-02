@@ -1,10 +1,9 @@
 package com.mdev.chatcord.server.friend.model;
 
 import com.mdev.chatcord.server.common.BaseEntity;
-import com.mdev.chatcord.server.friend.service.EFriendStatus;
+import com.mdev.chatcord.server.friend.enums.EFriendStatus;
 import com.mdev.chatcord.server.user.model.Profile;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

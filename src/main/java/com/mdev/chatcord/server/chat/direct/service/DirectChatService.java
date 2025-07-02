@@ -17,6 +17,8 @@ import com.mdev.chatcord.server.communication.repository.PrivilegeRepository;
 import com.mdev.chatcord.server.communication.service.PrivilegeType;
 import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
+import com.mdev.chatcord.server.friend.model.Friendship;
+import com.mdev.chatcord.server.friend.repository.FriendshipRepository;
 import com.mdev.chatcord.server.message.model.Message;
 import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
@@ -33,11 +35,54 @@ import java.util.*;
 public class DirectChatService {
     
     private final AccountRepository accountRepository;
-    private final ProfileRepository userProfileRepository;
+    private final ProfileRepository profileRepository;
     private final ChatRepository chatRepository;
     private final ChatMemberRepository chatMemberRepository;
     private final ChatRoleRepository chatRoleRepository;
     private final PrivilegeRepository privilegeRepository;
+    private final FriendshipRepository friendshipRepository;
+
+    @Transactional(rollbackFor = Exception.class)
+    public ChatDTO createDirectChat(String requesterUUID, String receiverUUID){
+        Profile sender = profileRepository.findByUuid(UUID.fromString(requesterUUID)).orElseThrow(()
+                -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+        Profile receiver = profileRepository.findByUuid(UUID.fromString(receiverUUID)).orElseThrow(()
+                -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+        Friendship friendship = friendshipRepository.findByOwnerIdFriendId(sender.getId(), receiver.getId())
+                .orElseThrow(() -> new BusinessException(ExceptionCode.FRIENDSHIP_NOT_FOUND));
+
+        DirectChat chat = new DirectChat();
+        chat.setType(ChatType.PRIVATE);
+        chat.setCreatedAt(LocalDateTime.now());
+        //chatRepository.save(chat);
+
+        //ChatRole chatRole = createRole("Member", receiverChat);
+
+        ChatMember senderChatMember = createDefaultChatMember(sender, chat, null);
+        ChatMember receiverChatMember = createDefaultChatMember(receiver, chat, null);
+
+        senderChatMember.setChat(chat);
+        receiverChatMember.setChat(chat);
+
+        List<ChatMember> chatMembers = new ArrayList<>(List.of(senderChatMember, receiverChatMember));
+        chat.setMembers(chatMembers);
+
+        chatMemberRepository.saveAll(chatMembers);
+        chatRepository.save(chat);
+
+//        ChatMemberDTO senderChatMemberDTO = new ChatMemberDTO(sender.getUsername(), sender.getTag(),
+//                sender.getAvatarUrl(), "Member");
+//
+//        ChatMemberDTO receiverChatMemberDTO = new ChatMemberDTO(participants.receiver().getUsername(),
+//                participants.receiver().getTag(), participants.receiver().getAvatarUrl(),
+//                "Member");
+
+        return ChatDTO.builder()
+                .chatType(chat.getType().name())
+                .unreadStatus(new UnreadStatus(0, false, false))
+                .createdAt(LocalDateTime.now())
+                .build();
+    }
 
     @Transactional(rollbackFor = Exception.class)
     public ChatDTO createPrivateChat(PrivateChatParticipants participants){
@@ -81,14 +126,12 @@ public class DirectChatService {
                 .build();
     }
 
-    public ChatDTO retrieveConversation(String uuid, String receiverUsername, String receiverTag){
+    public ChatDTO retrieveConversation(String senderUUID, String receiverUUID){
 
-        Profile sender = userProfileRepository.findByUuid(UUID.fromString(uuid))
+        Profile sender = profileRepository.findByUuid(UUID.fromString(senderUUID))
                 .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
-
-        Profile receiver = userProfileRepository.findByUsernameAndTag(receiverUsername, receiverTag)
-                .orElseThrow(() -> new BusinessException(ExceptionCode.FRIEND_NOT_FOUND));
-
+        Profile receiver = profileRepository.findByUuid(UUID.fromString(receiverUUID))
+                .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
         DirectChat chat = (DirectChat) chatRepository.findPrivateChatBetweenUsers(
                 sender.getId(),
                 receiver.getId(),
@@ -99,7 +142,7 @@ public class DirectChatService {
         List<ChatMemberDTO> membersDTO = new ArrayList<>();
 
         for (ChatMember member: members){
-            Profile profile = userProfileRepository.findByAccountId(member.getProfile().getId()).orElseThrow(()
+            Profile profile = profileRepository.findByAccountId(member.getProfile().getId()).orElseThrow(()
                     -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
             membersDTO.add(new ChatMemberDTO(member.getProfile().getUsername(), member.getProfile().getTag(),

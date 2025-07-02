@@ -3,10 +3,9 @@ package com.mdev.chatcord.server.user.service;
 import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.friend.dto.ContactPreview;
-import com.mdev.chatcord.server.friend.model.Friendship;
 import com.mdev.chatcord.server.friend.repository.FriendshipRepository;
-import com.mdev.chatcord.server.friend.service.EFriendStatus;
-import com.mdev.chatcord.server.friend.service.FriendService;
+import com.mdev.chatcord.server.friend.enums.EFriendStatus;
+import com.mdev.chatcord.server.friend.service.FriendServiceImpl;
 import com.mdev.chatcord.server.user.dto.ProfileDetails;
 import com.mdev.chatcord.server.user.model.Account;
 import com.mdev.chatcord.server.user.model.Profile;
@@ -40,7 +39,7 @@ public class UserService {
     private final ProfileRepository profileRepository;
 
     private final AuthenticationManager authenticationManager;
-    private final FriendService friendService;
+    private final FriendServiceImpl friendService;
 
 
     @Transactional(rollbackFor = Exception.class)
@@ -93,7 +92,7 @@ public class UserService {
         Set<UUID> relations = new HashSet<>();
         Profile user = profileRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(()
                 -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
-        List<ContactPreview> friends = friendService.getAllFriends(uuid);
+        List<ContactPreview> friends = friendService.retrieveAllFriendships(uuid);
         return friends.stream().filter(friend -> friend.getFriendStatus() == EFriendStatus.ACCEPTED)
                 .map(ContactPreview::getUuid).collect(Collectors.toSet());
     }

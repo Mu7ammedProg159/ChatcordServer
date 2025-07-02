@@ -1,6 +1,6 @@
 package com.mdev.chatcord.server.friend.dto;
 
-import com.mdev.chatcord.server.friend.service.EFriendStatus;
+import com.mdev.chatcord.server.friend.enums.EFriendStatus;
 import com.mdev.chatcord.server.user.service.EUserState;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
