@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.user.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mdev.chatcord.server.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.UUID;
 public class Profile extends BaseEntity {
 
     @OneToOne(mappedBy = "profile")
+    @JsonIgnore
     private Account account;
 
     @Column(unique = true, nullable = false, updatable = false)

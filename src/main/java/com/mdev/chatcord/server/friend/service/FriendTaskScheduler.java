@@ -19,9 +19,9 @@ public class FriendTaskScheduler {
     private final FriendNotificationService notificationService;
 
     //900000
-    @Scheduled(fixedRate = 10_000)
+    @Scheduled(fixedRate = 900_000)
     public void deleteDeclinedFriendships(){
-        LocalDateTime cutoff = LocalDateTime.now().minusSeconds(10);
+        LocalDateTime cutoff = LocalDateTime.now().minusSeconds(900);
         updateAndDeleteFriendships(cutoff);
         int removedFriendships = friendshipRepository.deleteFriendship(cutoff);
         if (removedFriendships > 0)

@@ -8,8 +8,10 @@ import lombok.*;
 @Getter
 @Setter
 public class ChatMemberDTO {
+    private String uuid;
     private String username;
     private String tag;
     private String avatarUrl;
+    private String avatarColor;
     private String role; // ADMIN, MOD, MEMBER, etc.
 }

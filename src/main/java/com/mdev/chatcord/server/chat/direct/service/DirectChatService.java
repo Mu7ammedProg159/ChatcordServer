@@ -34,7 +34,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class DirectChatService {
     
-    private final AccountRepository accountRepository;
     private final ProfileRepository profileRepository;
     private final ChatRepository chatRepository;
     private final ChatMemberRepository chatMemberRepository;
@@ -43,7 +42,7 @@ public class DirectChatService {
     private final FriendshipRepository friendshipRepository;
 
     @Transactional(rollbackFor = Exception.class)
-    public ChatDTO createDirectChat(String requesterUUID, String receiverUUID){
+    private ChatDTO createDirectChat(String requesterUUID, String receiverUUID){
         Profile sender = profileRepository.findByUuid(UUID.fromString(requesterUUID)).orElseThrow(()
                 -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
         Profile receiver = profileRepository.findByUuid(UUID.fromString(receiverUUID)).orElseThrow(()
@@ -54,7 +53,7 @@ public class DirectChatService {
         DirectChat chat = new DirectChat();
         chat.setType(ChatType.PRIVATE);
         chat.setCreatedAt(LocalDateTime.now());
-        //chatRepository.save(chat);
+        chatRepository.save(chat);
 
         //ChatRole chatRole = createRole("Member", receiverChat);
 
@@ -70,62 +69,21 @@ public class DirectChatService {
         chatMemberRepository.saveAll(chatMembers);
         chatRepository.save(chat);
 
-//        ChatMemberDTO senderChatMemberDTO = new ChatMemberDTO(sender.getUsername(), sender.getTag(),
-//                sender.getAvatarUrl(), "Member");
-//
-//        ChatMemberDTO receiverChatMemberDTO = new ChatMemberDTO(participants.receiver().getUsername(),
-//                participants.receiver().getTag(), participants.receiver().getAvatarUrl(),
-//                "Member");
+        ChatMemberDTO senderChatMemberDTO = new ChatMemberDTO(sender.getUuid().toString().toLowerCase(),
+                sender.getUsername(), sender.getTag(), sender.getAvatarUrl(), sender.getAvatarHexColor(), "Member");
+
+        ChatMemberDTO receiverChatMemberDTO = new ChatMemberDTO(receiver.getUuid().toString().toLowerCase(),
+                receiver.getUsername(), receiver.getTag(), receiver.getAvatarUrl(), receiver.getAvatarHexColor(), "Member");
 
         return ChatDTO.builder()
                 .chatType(chat.getType().name())
-                .unreadStatus(new UnreadStatus(0, false, false))
-                .createdAt(LocalDateTime.now())
-                .build();
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public ChatDTO createPrivateChat(PrivateChatParticipants participants){
-        DirectChat receiverChat = new DirectChat();
-        receiverChat.setType(ChatType.PRIVATE);
-        receiverChat.setCreatedAt(LocalDateTime.now());
-        chatRepository.save(receiverChat);
-
-        //ChatRole chatRole = createRole("Member", receiverChat);
-
-        ChatMember senderChatMember = createDefaultChatMember(participants.sender(), receiverChat, null);
-        ChatMember receiverChatMember = createDefaultChatMember(participants.receiver(), receiverChat, null);
-
-        senderChatMember.setChat(receiverChat);
-        receiverChatMember.setChat(receiverChat);
-
-        List<ChatMember> chatMembers = new ArrayList<>(List.of(senderChatMember, receiverChatMember));
-        receiverChat.setMembers(chatMembers);
-
-        //chatMemberRepository.saveAll(chatMembers);
-        try {
-            chatRepository.save(receiverChat);
-        } catch (Exception e) {
-            e.printStackTrace(); // ✅ Logs full trace
-            throw e;
-        }
-
-        ChatMemberDTO senderChatMemberDTO = new ChatMemberDTO(participants.sender().getUsername(),
-                participants.sender().getTag(), participants.sender().getAvatarUrl(),
-                "Member");
-
-        ChatMemberDTO receiverChatMemberDTO = new ChatMemberDTO(participants.receiver().getUsername(),
-                participants.receiver().getTag(), participants.receiver().getAvatarUrl(),
-                "Member");
-
-        return ChatDTO.builder()
-                .chatType(receiverChat.getType().name())
                 .chatMembersDto(List.of(senderChatMemberDTO, receiverChatMemberDTO))
                 .unreadStatus(new UnreadStatus(0, false, false))
                 .createdAt(LocalDateTime.now())
                 .build();
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public ChatDTO retrieveConversation(String senderUUID, String receiverUUID){
 
         Profile sender = profileRepository.findByUuid(UUID.fromString(senderUUID))
@@ -138,15 +96,18 @@ public class DirectChatService {
                 ChatType.PRIVATE
         );
 
+        if (chat == null)
+            return createDirectChat(senderUUID, receiverUUID);
+
         List<ChatMember> members = chat.getMembers();
         List<ChatMemberDTO> membersDTO = new ArrayList<>();
 
         for (ChatMember member: members){
-            Profile profile = profileRepository.findByAccountId(member.getProfile().getId()).orElseThrow(()
-                    -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
 
-            membersDTO.add(new ChatMemberDTO(member.getProfile().getUsername(), member.getProfile().getTag(),
-                    profile.getAvatarUrl(), "Member"));
+            Profile profile = member.getProfile();
+            membersDTO.add(new ChatMemberDTO(profile.getUuid().toString().toLowerCase(),
+                    profile.getUsername(), profile.getTag(),
+                    profile.getAvatarUrl(), profile.getAvatarHexColor(), "Member"));
         }
 
         Message lastMessage = null;
@@ -166,6 +127,7 @@ public class DirectChatService {
                 .build();
     }
 
+    @Transactional(rollbackFor = Exception.class)
     private ChatMember createDefaultChatMember(Profile chatProfile, Chat chat, ChatRole chatRole) {
         ChatMember chatMember = new ChatMember();
         chatMember.setProfile(chatProfile);
@@ -195,4 +157,5 @@ public class DirectChatService {
         return chatRoleRepository.findByNameAndChat_Id(roleName, chat.getId())
                 .orElseThrow(() -> new BusinessException(ExceptionCode.CHAT_NOT_FOUND));
     }
+
 }

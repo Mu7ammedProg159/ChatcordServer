@@ -67,7 +67,7 @@ public class GlobalExceptionHandleResolver {
         return switch (code) {
             case UNAUTHORIZED, INVALID_CREDENTIALS -> HttpStatus.UNAUTHORIZED;
             case INVALID_EMAIL, ACCOUNT_NOT_FOUND, UUID_NOT_FOUND, FRIEND_NOT_FOUND, FRIENDSHIP_NOT_FOUND,
-                 CHAT_NOT_FOUND, MESSAGE_NOT_FOUND -> HttpStatus.NOT_FOUND;
+                 CHAT_NOT_FOUND, MESSAGE_NOT_FOUND, INVALID_SENDER -> HttpStatus.NOT_FOUND;
 
             case EMAIL_NOT_VERIFIED -> HttpStatus.LOCKED;
             case EMAIL_ALREADY_VERIFIED, ACCOUNT_ALREADY_REGISTERED, FRIEND_ALREADY_ADDED -> HttpStatus.CONFLICT;

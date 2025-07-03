@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.chat.core.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mdev.chatcord.server.chat.core.enums.ChatType;
 import com.mdev.chatcord.server.communication.model.ChatMember;
 import com.mdev.chatcord.server.message.model.Message;
@@ -17,7 +18,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Getter
 @Setter
-@Builder
 @AllArgsConstructor
 public abstract class Chat {
 

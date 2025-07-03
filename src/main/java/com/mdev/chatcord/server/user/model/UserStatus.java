@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.user.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mdev.chatcord.server.common.BaseEntity;
 import com.mdev.chatcord.server.user.service.EUserState;
 import jakarta.persistence.*;
@@ -19,6 +20,7 @@ public class UserStatus extends BaseEntity {
     private EUserState status;
 
     @OneToOne(mappedBy = "userStatus")
+    @JsonIgnore
     private Profile profile;
 
     public UserStatus(EUserState status) {

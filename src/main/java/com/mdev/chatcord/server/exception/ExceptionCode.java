@@ -8,6 +8,7 @@ public enum ExceptionCode {
     INVALID_ACCESS_TOKEN("0003", "Invalid Session Key. Session expired, please re-login."),
     INVALID_REFRESH_TOKEN("0004", "Invalid Reloaded Session Key. Session expired, please re-login."),
     INVALID_EMAIL("1001", "Email address does not exists."),
+    INVALID_SENDER("1008", "The sender of the message is invalid. Something went wrong."),
     ACCOUNT_NOT_FOUND("1002","Account with this email address is not registered."),
     UUID_NOT_FOUND("1003", "Account with this UUID does not exists."),
     INVALID_CREDENTIALS("1004", "Email or password is invalid."),

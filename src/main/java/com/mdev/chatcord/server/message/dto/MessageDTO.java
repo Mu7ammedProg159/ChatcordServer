@@ -19,7 +19,7 @@ public class MessageDTO implements Serializable {
     private String content;
     private ChatMemberDTO sender; // uuid
     private ChatMemberDTO receiver; // Can be username#tag or guildId << this is currently is the group.
-    private LocalDateTime timestamp;
+    private LocalDateTime sentAt;
     private boolean isEdited;
     private EMessageStatus messageStatus;
 

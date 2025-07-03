@@ -1,5 +1,6 @@
 package com.mdev.chatcord.server.common;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,17 +26,22 @@ public abstract class BaseEntity {
 
     @CreatedDate
     @Column(updatable = false)
+    @JsonIgnore
     private LocalDateTime createdAt;
 
     @LastModifiedDate
+    @JsonIgnore
     private LocalDateTime updatedAt;
 
     @CreatedBy
+    @JsonIgnore
     private String createdBy;
 
     @LastModifiedBy
+    @JsonIgnore
     private String updatedBy;
 
+    @JsonIgnore
     private boolean isDeleted = false;
 
     @Version
