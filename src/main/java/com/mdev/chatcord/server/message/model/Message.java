@@ -30,6 +30,8 @@ public class Message extends BaseEntity {
     private LocalDateTime sentAt; // When Sent ?
     private LocalDateTime seenAt; // When read ?
 
+    private boolean isEdited = false;
+
     @Enumerated(EnumType.STRING)
     private EMessageStatus messageState; // Reached or not ?
 

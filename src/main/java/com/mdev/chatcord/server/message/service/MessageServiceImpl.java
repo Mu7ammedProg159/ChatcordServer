@@ -55,7 +55,7 @@ public class MessageServiceImpl implements MessageService {
         messagingTemplate.convertAndSendToUser(message.getSender().getUuid(), "/queue/private/message.send", message);
 
         Message messageEntity = new Message(sender, chat, message.getContent(), LocalDateTime.now(), null,
-                message.getMessageStatus());
+               message.isEdited(), message.getMessageStatus());
         redisMessageService.bufferMessage(chat.getId(), redisMessageService.toRedis(chat, messageEntity));
 
     }
@@ -75,7 +75,6 @@ public class MessageServiceImpl implements MessageService {
                 chat.getMessages().addAll(messages);
                 chatRepository.save(chat);
             }
-
             redisMessageService.clearBufferedMessages(chatId);
         }
     }

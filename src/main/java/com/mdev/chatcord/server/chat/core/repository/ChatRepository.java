@@ -47,7 +47,7 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
     @Query("""
     SELECT c FROM DirectChat c
     JOIN FETCH c.members m
-    WHERE c.type = :type
+    WHERE c.type =:type
       AND SIZE(c.members) = 2
       AND :senderId IN (SELECT m1.profile.id FROM ChatMember m1 WHERE m1.chat = c)
       AND :friendId IN (SELECT m2.profile.id FROM ChatMember m2 WHERE m2.chat = c)

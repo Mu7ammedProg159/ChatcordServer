@@ -74,13 +74,13 @@ public class RedisMessageServiceImpl implements RedisMessageService{
     public MessageRedis toRedis(DirectChat chat, Message messageEntity) {
         return new MessageRedis(chat.getId(), messageEntity.getMessage(),
                 messageEntity.getSender(), messageEntity.getSentAt(), messageEntity.getSeenAt(),
-                messageEntity.getMessageState());
+                messageEntity.isEdited(), messageEntity.getMessageState());
     }
 
     @Override
     public Message fromEntity(Chat chat, MessageRedis message) {
         return new Message(message.getSender(), chat, message.getContent(), message.getSentAt(), message.getSeenAt(),
-                message.getMessageState());
+               message.isEdited(), message.getMessageState());
     }
 
     private String getKey(Long chatId){

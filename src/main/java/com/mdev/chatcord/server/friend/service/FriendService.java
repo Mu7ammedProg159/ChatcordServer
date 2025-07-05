@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 public interface FriendService {
-
     ContactPair add(@Valid String uuid, String friendUsername, String friendTag);
     ContactPair accept(@Valid String uuid, String friendUsername, String friendTag);
     ContactPair decline(@Valid String uuid, String friendUsername, String friendTag);

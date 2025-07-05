@@ -22,5 +22,6 @@ public class MessageRedis {
     private Profile sender;
     private LocalDateTime sentAt; // When Sent ?
     private LocalDateTime seenAt; // When read ?
+    private boolean isEdited;
     private EMessageStatus messageState; // Reached or not ?
 }
