@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -14,6 +15,7 @@ import java.util.List;
 @ToString
 @Builder
 public class ChatDTO {
+    private UUID uuid;
     private String chatType;
     private LocalDateTime createdAt;
     private String lastMessage;
@@ -21,5 +23,5 @@ public class ChatDTO {
     private String lastMessageSender;
     private List<ChatMemberDTO> chatMembersDto;
     private List<MessageDTO> messages;
-    private UnreadStatus unreadStatus;
+    private ChatNotification chatNotification;
 }

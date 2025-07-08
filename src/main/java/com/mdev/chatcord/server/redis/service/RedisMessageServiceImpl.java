@@ -6,7 +6,7 @@ import com.mdev.chatcord.server.chat.direct.model.DirectChat;
 import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.message.model.Message;
-import com.mdev.chatcord.server.message.service.EMessageStatus;
+import com.mdev.chatcord.server.message.repository.MessageRepository;
 import com.mdev.chatcord.server.redis.model.MessageRedis;
 import com.mdev.chatcord.server.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +24,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class RedisMessageServiceImpl implements RedisMessageService{
+    private final MessageRepository messageRepository;
     private final ChatRepository chatRepository;
 
     private final RedisTemplate<String, MessageRedis> redisTemplate;
@@ -72,15 +72,18 @@ public class RedisMessageServiceImpl implements RedisMessageService{
     }
 
     public MessageRedis toRedis(DirectChat chat, Message messageEntity) {
-        return new MessageRedis(chat.getId(), messageEntity.getMessage(),
-                messageEntity.getSender(), messageEntity.getSentAt(), messageEntity.getSeenAt(),
-                messageEntity.isEdited(), messageEntity.getMessageState());
+        return new MessageRedis(messageEntity.getId(), chat.getId(), messageEntity.getUuid(), chat.getUuid(),
+                messageEntity.getContext(), messageEntity.getMessage(), messageEntity.getType(),
+                messageEntity.getReplyTo() != null ? messageEntity.getReplyTo().getId() : null,
+                messageEntity.getSender(), messageEntity.getSentAt(), messageEntity.getSeenAt(), messageEntity.isEdited(),
+                messageEntity.isPinned(), messageEntity.getState());
     }
 
     @Override
     public Message fromEntity(Chat chat, MessageRedis message) {
-        return new Message(message.getSender(), chat, message.getContent(), message.getSentAt(), message.getSeenAt(),
-               message.isEdited(), message.getMessageState());
+        Message replyTo = messageRepository.findById(message.getReplyToId()).orElse(null);
+        return new Message(message.getUuid(), message.getSender(), chat, message.getContext(), message.getContent(), message.getType(),
+               replyTo, message.isEdited(), message.isPinned(), message.getSentAt(), message.getSeenAt(), message.getMessageState());
     }
 
     private String getKey(Long chatId){

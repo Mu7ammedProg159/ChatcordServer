@@ -4,8 +4,7 @@ import com.mdev.chatcord.server.chat.core.model.Chat;
 import com.mdev.chatcord.server.chat.core.repository.ChatRepository;
 import com.mdev.chatcord.server.chat.core.enums.ChatType;
 import com.mdev.chatcord.server.chat.core.dto.ChatDTO;
-import com.mdev.chatcord.server.chat.direct.dto.PrivateChatParticipants;
-import com.mdev.chatcord.server.chat.core.dto.UnreadStatus;
+import com.mdev.chatcord.server.chat.core.dto.ChatNotification;
 import com.mdev.chatcord.server.chat.direct.model.DirectChat;
 import com.mdev.chatcord.server.communication.dto.ChatMemberDTO;
 import com.mdev.chatcord.server.communication.model.ChatMember;
@@ -23,14 +22,12 @@ import com.mdev.chatcord.server.message.dto.MessageDTO;
 import com.mdev.chatcord.server.message.model.Message;
 import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
-import com.mdev.chatcord.server.user.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -78,9 +75,10 @@ public class DirectChatService {
                 receiver.getUsername(), receiver.getTag(), receiver.getAvatarUrl(), receiver.getAvatarHexColor(), "Member");
 
         return ChatDTO.builder()
+                .uuid(UUID.randomUUID())
                 .chatType(chat.getType().name())
                 .chatMembersDto(List.of(senderChatMemberDTO, receiverChatMemberDTO))
-                .unreadStatus(new UnreadStatus(0, false, false))
+                .chatNotification(new ChatNotification(false, false))
                 .createdAt(LocalDateTime.now())
                 .build();
     }
@@ -122,6 +120,7 @@ public class DirectChatService {
         }
 
         return ChatDTO.builder()
+                .uuid(chat.getUuid())
                 .chatType(chat.getType().name())
                 .chatMembersDto(membersDTO)
                 .messages(messageDTOS)
@@ -129,7 +128,7 @@ public class DirectChatService {
                 .createdAt(chat.getCreatedAt())
                 .lastMessageAt(lastMessage != null ? lastMessage.getSentAt() : null)
                 .lastMessageSender(lastMessage != null ? lastMessage.getSender().getUsername() : null)
-                .unreadStatus(new UnreadStatus(0, false, false))
+                .chatNotification(new ChatNotification(false, false))
                 .build();
     }
 
@@ -175,8 +174,9 @@ public class DirectChatService {
                 entityReceiver.getUsername(), entityReceiver.getTag(), entityReceiver.getAvatarUrl(),
                 entityReceiver.getAvatarHexColor(), null);
 
-        return new MessageDTO(message.getChat().getType(), message.getMessage(),
-                sender, receiver, message.getSentAt(), message.isEdited(), message.getMessageState());
+        return new MessageDTO(message.getUuid(), message.getChat().getUuid(), message.getChat().getType(),
+                message.getMessage(), message.getType(), toMessageDTO(message.getReplyTo()), sender, receiver,
+                message.getSentAt(), message.getSeenAt(), message.isEdited(), message.isPinned(), message.getState());
     }
 
 }

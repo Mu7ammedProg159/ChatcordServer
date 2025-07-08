@@ -8,6 +8,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @AllArgsConstructor
@@ -18,6 +19,9 @@ public class ChatMember {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+//    @Column(unique = true, nullable = false, updatable = false)
+//    private UUID uuid;
 
     @ManyToOne
     private Profile profile; // Who the member of a chat ?

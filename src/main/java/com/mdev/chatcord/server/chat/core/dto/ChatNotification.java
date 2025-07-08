@@ -9,8 +9,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class UnreadStatus {
-    private int unreadCount;
+public class ChatNotification {
     private boolean isMuted;
-    private boolean isPinned;
+    private boolean isFavourite;
 }
