@@ -42,9 +42,8 @@ public class RedisMessageServiceImpl implements RedisMessageService{
         String key = getKey(chatId);
         List<MessageRedis> messageRedis = getBufferedRedisMessages(chatId);
         List<Message> messages = new ArrayList<>();
-        Chat chat = chatRepository.findById(chatId).orElseThrow();
         for (MessageRedis message : messageRedis){
-            messages.add(fromEntity(chat, message));
+            messages.add(fromEntity(message));
         }
         return messages;
     }
@@ -71,17 +70,18 @@ public class RedisMessageServiceImpl implements RedisMessageService{
                 .collect(Collectors.toSet());
     }
 
-    public MessageRedis toRedis(DirectChat chat, Message messageEntity) {
-        return new MessageRedis(messageEntity.getId(), chat.getId(), messageEntity.getUuid(), chat.getUuid(),
-                messageEntity.getContext(), messageEntity.getMessage(), messageEntity.getType(),
-                messageEntity.getReplyTo() != null ? messageEntity.getReplyTo().getId() : null,
+    public MessageRedis toRedis(Message messageEntity) {
+        return new MessageRedis(messageEntity.getId(), messageEntity.getChat().getId(), messageEntity.getUuid(),
+                messageEntity.getChat().getUuid(), messageEntity.getContext(), messageEntity.getMessage(),
+                messageEntity.getType(), messageEntity.getReplyTo() != null ? messageEntity.getReplyTo().getId() : null,
                 messageEntity.getSender(), messageEntity.getSentAt(), messageEntity.getSeenAt(), messageEntity.isEdited(),
                 messageEntity.isPinned(), messageEntity.getState());
     }
 
     @Override
-    public Message fromEntity(Chat chat, MessageRedis message) {
+    public Message fromEntity(MessageRedis message) {
         Message replyTo = messageRepository.findById(message.getReplyToId()).orElse(null);
+        Chat chat = chatRepository.findByUuid(message.getChatUUID()).orElseThrow(() -> new BusinessException(ExceptionCode.CHAT_NOT_FOUND));
         return new Message(message.getUuid(), message.getSender(), chat, message.getContext(), message.getContent(), message.getType(),
                replyTo, message.isEdited(), message.isPinned(), message.getSentAt(), message.getSeenAt(), message.getMessageState());
     }

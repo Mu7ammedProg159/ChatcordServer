@@ -70,7 +70,7 @@ public class MessageServiceImpl implements MessageService {
         message.setMessageStatus(EMessageStatus.DELIVERED);
 
         Message messageEntity = toMessage(message);
-        redisMessageService.bufferMessage(chat.getId(), redisMessageService.toRedis(chat, messageEntity));
+        redisMessageService.bufferMessage(chat.getId(), redisMessageService.toRedis(messageEntity));
 
     }
 
@@ -122,17 +122,9 @@ public class MessageServiceImpl implements MessageService {
             List<Message> messages = redisMessageService.getBufferedMessages(chatId);
             if (messages == null || messages.isEmpty()) continue;
 
-            DirectChat chat = (DirectChat) chatRepository.findById(chatId).orElse(null);
-            if (chat != null) {
-                log.info("{} messages have been registered in database.", messages.size());
-                chat.getMessages().addAll(messages);
-                chat.setLastMessageSent(messages.stream()
-                        .filter(msg -> msg.getSentAt() != null) // optional, in case of null dates
-                        .max(Comparator.comparing(Message::getSentAt)).orElse(
-                                messages.get(messages.size()-1)
-                        ));
-                chatRepository.save(chat);
-            }
+            log.info("{} messages have been registered in database.", messages.size());
+            messageRepository.saveAll(messages);
+
             redisMessageService.clearBufferedMessages(chatId);
         }
     }

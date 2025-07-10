@@ -32,12 +32,6 @@ public abstract class Chat {
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL)
     private List<ChatMember> members; // Who are the members of this chat ?
 
-    @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL)
-    private List<Message> messages = new ArrayList<>(); // All messages in chat
-
-    @OneToOne(fetch = FetchType.LAZY)
-    private Message lastMessageSent;
-
     @ManyToMany
     @JoinTable(
             joinColumns = @JoinColumn(name = "chat_id"),

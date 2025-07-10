@@ -20,9 +20,12 @@ import com.mdev.chatcord.server.friend.model.Friendship;
 import com.mdev.chatcord.server.friend.repository.FriendshipRepository;
 import com.mdev.chatcord.server.message.dto.MessageDTO;
 import com.mdev.chatcord.server.message.model.Message;
+import com.mdev.chatcord.server.message.repository.MessageRepository;
 import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +42,7 @@ public class DirectChatService {
     private final ChatRoleRepository chatRoleRepository;
     private final PrivilegeRepository privilegeRepository;
     private final FriendshipRepository friendshipRepository;
+    private final MessageRepository messageRepository;
 
     @Transactional(rollbackFor = Exception.class)
     private ChatDTO createDirectChat(String requesterUUID, String receiverUUID){
@@ -110,13 +114,12 @@ public class DirectChatService {
                     profile.getAvatarUrl(), profile.getAvatarHexColor(), "Member"));
         }
 
-        List<Message> messages = chat.getMessages();
+        Page<Message> messages = messageRepository.findByChatIdOrderBySentAtDesc(chat.getId(), Pageable.unpaged());
         List<MessageDTO> messageDTOS = messages.stream().map(this::toMessageDTO).toList();
 
         Message lastMessage = null;
-        if (!chat.getMessages().isEmpty()){
-            lastMessage = chat.getMessages().stream().sorted(Comparator.comparing(Message::getSentAt).reversed())
-                    .findFirst().orElseThrow(() -> new BusinessException(ExceptionCode.MESSAGE_NOT_FOUND));
+        if (!messages.isEmpty()){
+            lastMessage = messages.getContent().get(0);
         }
 
         return ChatDTO.builder()
@@ -164,6 +167,10 @@ public class DirectChatService {
     }
 
     public MessageDTO toMessageDTO(Message message){
+
+        if (message == null)
+            return null;
+
         Profile entitySender = message.getSender();
         Profile entityReceiver = message.getChat().getMembers().get(1).getProfile();
 
@@ -173,6 +180,9 @@ public class DirectChatService {
         ChatMemberDTO receiver = new ChatMemberDTO(entityReceiver.getUuid().toString().toLowerCase(),
                 entityReceiver.getUsername(), entityReceiver.getTag(), entityReceiver.getAvatarUrl(),
                 entityReceiver.getAvatarHexColor(), null);
+
+        if (message.getReplyTo() == null)
+            return null;
 
         return new MessageDTO(message.getUuid(), message.getChat().getUuid(), message.getChat().getType(),
                 message.getMessage(), message.getType(), toMessageDTO(message.getReplyTo()), sender, receiver,
