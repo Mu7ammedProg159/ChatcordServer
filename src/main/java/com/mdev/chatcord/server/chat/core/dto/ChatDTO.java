@@ -18,9 +18,6 @@ public class ChatDTO {
     private UUID uuid;
     private String chatType;
     private LocalDateTime createdAt;
-    private String lastMessage;
-    private LocalDateTime lastMessageAt;
-    private String lastMessageSender;
     private List<ChatMemberDTO> chatMembersDto;
     private List<MessageDTO> messages;
     private ChatNotification chatNotification;

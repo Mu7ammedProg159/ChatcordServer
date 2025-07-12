@@ -21,6 +21,9 @@ import com.mdev.chatcord.server.friend.repository.FriendshipRepository;
 import com.mdev.chatcord.server.message.dto.MessageDTO;
 import com.mdev.chatcord.server.message.model.Message;
 import com.mdev.chatcord.server.message.repository.MessageRepository;
+import com.mdev.chatcord.server.message.service.MessageFactory;
+import com.mdev.chatcord.server.redis.model.MessageRedis;
+import com.mdev.chatcord.server.redis.service.RedisMessageService;
 import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,18 +34,25 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
 public class DirectChatService {
     
     private final ProfileRepository profileRepository;
+    private final FriendshipRepository friendshipRepository;
+
     private final ChatRepository chatRepository;
     private final ChatMemberRepository chatMemberRepository;
+
     private final ChatRoleRepository chatRoleRepository;
     private final PrivilegeRepository privilegeRepository;
-    private final FriendshipRepository friendshipRepository;
+
     private final MessageRepository messageRepository;
+    private final MessageFactory messageFactory;
+    private final RedisMessageService redisMessageService;
 
     @Transactional(rollbackFor = Exception.class)
     private ChatDTO createDirectChat(String requesterUUID, String receiverUUID){
@@ -114,23 +124,22 @@ public class DirectChatService {
                     profile.getAvatarUrl(), profile.getAvatarHexColor(), "Member"));
         }
 
-        Page<Message> messages = messageRepository.findByChatIdOrderBySentAtDesc(chat.getId(), Pageable.unpaged());
-        List<MessageDTO> messageDTOS = messages.stream().map(this::toMessageDTO).toList();
-
-        Message lastMessage = null;
-        if (!messages.isEmpty()){
-            lastMessage = messages.getContent().get(0);
-        }
+        List<MessageDTO> messageDTOS = Stream.concat(
+                        messageRepository.findByChatIdOrderBySentAtAsc(chat.getId(), Pageable.unpaged()).getContent().stream(),
+                        Optional.ofNullable(redisMessageService.getBufferedMessages(chat.getId()))
+                                .orElse(Collections.emptyList())
+                                .stream()
+                )
+                .sorted(Comparator.comparing(Message::getSentAt))
+                .map(messageFactory::toMessageDTO)
+                .collect(Collectors.toList());
 
         return ChatDTO.builder()
                 .uuid(chat.getUuid())
                 .chatType(chat.getType().name())
                 .chatMembersDto(membersDTO)
                 .messages(messageDTOS)
-                .lastMessage(lastMessage != null ? lastMessage.getMessage() : null)
                 .createdAt(chat.getCreatedAt())
-                .lastMessageAt(lastMessage != null ? lastMessage.getSentAt() : null)
-                .lastMessageSender(lastMessage != null ? lastMessage.getSender().getUsername() : null)
                 .chatNotification(new ChatNotification(false, false))
                 .build();
     }
@@ -164,29 +173,6 @@ public class DirectChatService {
 
         return chatRoleRepository.findByNameAndChat_Id(roleName, chat.getId())
                 .orElseThrow(() -> new BusinessException(ExceptionCode.CHAT_NOT_FOUND));
-    }
-
-    public MessageDTO toMessageDTO(Message message){
-
-        if (message == null)
-            return null;
-
-        Profile entitySender = message.getSender();
-        Profile entityReceiver = message.getChat().getMembers().get(1).getProfile();
-
-        ChatMemberDTO sender = new ChatMemberDTO(entitySender.getUuid().toString().toLowerCase(),
-                entitySender.getUsername(), entitySender.getTag(), entitySender.getAvatarUrl(),
-                entitySender.getAvatarHexColor(), null);
-        ChatMemberDTO receiver = new ChatMemberDTO(entityReceiver.getUuid().toString().toLowerCase(),
-                entityReceiver.getUsername(), entityReceiver.getTag(), entityReceiver.getAvatarUrl(),
-                entityReceiver.getAvatarHexColor(), null);
-
-        if (message.getReplyTo() == null)
-            return null;
-
-        return new MessageDTO(message.getUuid(), message.getChat().getUuid(), message.getChat().getType(),
-                message.getMessage(), message.getType(), toMessageDTO(message.getReplyTo()), sender, receiver,
-                message.getSentAt(), message.getSeenAt(), message.isEdited(), message.isPinned(), message.getState());
     }
 
 }

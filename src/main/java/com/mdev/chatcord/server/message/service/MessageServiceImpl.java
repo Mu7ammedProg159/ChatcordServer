@@ -16,22 +16,22 @@ import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class MessageServiceImpl implements MessageService {
     private final MessageRepository messageRepository;
+    private final MessageFactory messageFactory;
     private final ChatMemberRepository chatMemberRepository;
 
     private final ChatRepository chatRepository;
@@ -69,11 +69,10 @@ public class MessageServiceImpl implements MessageService {
 
         message.setMessageStatus(EMessageStatus.DELIVERED);
 
-        Message messageEntity = toMessage(message);
-        redisMessageService.bufferMessage(chat.getId(), redisMessageService.toRedis(messageEntity));
+        Message messageEntity = messageFactory.toMessageByDTO(message);
+        redisMessageService.bufferMessage(chat.getId(), messageFactory.toRedisMessage(messageEntity));
 
     }
-
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -93,24 +92,37 @@ public class MessageServiceImpl implements MessageService {
         return message;
     }
 
-    public Message toMessage(MessageDTO message){
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public List<MessageDTO> setAllMessagesStatus(UUID chatId, UUID receiverUUID, EMessageStatus status){
 
-        if (message == null)
-            return null;
+        // Fetch all messages with the given status (e.g., DELIVERED)
+        List<Message> messages = messageRepository
+                .findAllByChat_UuidAndSender_UuidNotAndMessageStatus(chatId, receiverUUID, status, Pageable.unpaged())
+                .getContent();
 
-        Chat chat = chatRepository.findByUuid(message.getChatUUID()).orElseThrow(() -> new BusinessException(ExceptionCode.CHAT_NOT_FOUND));
-        Profile sender = profileRepository.findByUuid(UUID.fromString(message.getSender().getUuid()))
-                .orElseThrow(() -> new BusinessException(ExceptionCode.ACCOUNT_NOT_FOUND));
+        if (messages.isEmpty()) return Collections.emptyList();
 
-        if (message.getReplyTo() == null)
-            return new Message(message.getMessageUUID(), sender, chat, chat.getType(),
-                    message.getContent(), message.getType(), null, message.isEdited(),  message.isPinned(),
-                    message.getSentAt(), message.getSeenAt(), message.getMessageStatus());
+        // Prepare to collect DTOs for response
+        List<MessageDTO> updatedDTOs = new ArrayList<>();
 
-        return new Message(message.getMessageUUID(), sender, chat, chat.getType(),
-                message.getContent(), message.getType(), toMessage(message.getReplyTo()),
-                message.isEdited(), message.isPinned(), message.getSentAt(), message.getSeenAt(),
-                message.getMessageStatus());
+        for (Message message : messages) {
+            message.setState(EMessageStatus.SEEN);
+            message.setSeenAt(LocalDateTime.now());
+
+
+            updatedDTOs.add(messageFactory.toMessageDTO(message));
+        }
+
+        messagingTemplate.convertAndSendToUser(
+                messages.get(0).getSender().getUuid().toString().toLowerCase(),
+                "/queue/private/message.state.bulk",
+                updatedDTOs
+        );
+        // Save in batch
+        messageRepository.saveAll(messages);
+
+        return updatedDTOs;
     }
 
     @Override

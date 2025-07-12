@@ -1,6 +1,7 @@
 package com.mdev.chatcord.server.friend.dto;
 
 import com.mdev.chatcord.server.friend.enums.EFriendStatus;
+import com.mdev.chatcord.server.message.dto.MessageDTO;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -18,10 +19,10 @@ public class ContactPreview {
     private String tag; // friend's name or group name
     private String avatarUrl;
     private String avatarColor;
-    private String lastMessage;
-    private LocalDateTime lastMessageAt;
-    private String lastMessageSender; // name or null if not applicable
+    private MessageDTO lastMessage;
+    private int unreadMessages = 0;
     private boolean isGroup;
     private EFriendStatus friendStatus; // only if it's a friend, else null
+    private LocalDateTime addedAt;
 
 }

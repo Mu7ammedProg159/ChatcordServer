@@ -7,6 +7,7 @@ import com.mdev.chatcord.server.exception.BusinessException;
 import com.mdev.chatcord.server.exception.ExceptionCode;
 import com.mdev.chatcord.server.message.model.Message;
 import com.mdev.chatcord.server.message.repository.MessageRepository;
+import com.mdev.chatcord.server.message.service.MessageFactory;
 import com.mdev.chatcord.server.redis.model.MessageRedis;
 import com.mdev.chatcord.server.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 public class RedisMessageServiceImpl implements RedisMessageService{
     private final MessageRepository messageRepository;
     private final ChatRepository chatRepository;
+    private final MessageFactory messageFactory;
 
     private final RedisTemplate<String, MessageRedis> redisTemplate;
     private final UserService userService;
@@ -43,7 +45,7 @@ public class RedisMessageServiceImpl implements RedisMessageService{
         List<MessageRedis> messageRedis = getBufferedRedisMessages(chatId);
         List<Message> messages = new ArrayList<>();
         for (MessageRedis message : messageRedis){
-            messages.add(fromEntity(message));
+            messages.add(messageFactory.toMessageByRedis(message));
         }
         return messages;
     }
@@ -68,22 +70,6 @@ public class RedisMessageServiceImpl implements RedisMessageService{
         return keys.stream()
                 .map(k -> Long.valueOf(k.replace(PREFIX, "")))
                 .collect(Collectors.toSet());
-    }
-
-    public MessageRedis toRedis(Message messageEntity) {
-        return new MessageRedis(messageEntity.getId(), messageEntity.getChat().getId(), messageEntity.getUuid(),
-                messageEntity.getChat().getUuid(), messageEntity.getContext(), messageEntity.getMessage(),
-                messageEntity.getType(), messageEntity.getReplyTo() != null ? messageEntity.getReplyTo().getId() : null,
-                messageEntity.getSender(), messageEntity.getSentAt(), messageEntity.getSeenAt(), messageEntity.isEdited(),
-                messageEntity.isPinned(), messageEntity.getState());
-    }
-
-    @Override
-    public Message fromEntity(MessageRedis message) {
-        Message replyTo = messageRepository.findById(message.getReplyToId()).orElse(null);
-        Chat chat = chatRepository.findByUuid(message.getChatUUID()).orElseThrow(() -> new BusinessException(ExceptionCode.CHAT_NOT_FOUND));
-        return new Message(message.getUuid(), message.getSender(), chat, message.getContext(), message.getContent(), message.getType(),
-               replyTo, message.isEdited(), message.isPinned(), message.getSentAt(), message.getSeenAt(), message.getMessageState());
     }
 
     private String getKey(Long chatId){

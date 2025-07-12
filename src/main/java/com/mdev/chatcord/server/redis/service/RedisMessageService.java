@@ -13,6 +13,4 @@ public interface RedisMessageService {
     List<Message> getBufferedMessages(Long chatId);
     void clearBufferedMessages(Long chatId);
     Set<Long> getAllBufferedChatIds();
-    Message fromEntity(MessageRedis message);
-    MessageRedis toRedis(Message messageEntity);
 }
