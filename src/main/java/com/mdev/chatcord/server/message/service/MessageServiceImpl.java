@@ -1,8 +1,8 @@
 package com.mdev.chatcord.server.message.service;
 
 import com.mdev.chatcord.server.chat.core.enums.ChatType;
-import com.mdev.chatcord.server.chat.core.model.Chat;
 import com.mdev.chatcord.server.chat.core.repository.ChatRepository;
+import com.mdev.chatcord.server.chat.direct.dto.MessageStatusDTO;
 import com.mdev.chatcord.server.chat.direct.model.DirectChat;
 import com.mdev.chatcord.server.communication.repository.ChatMemberRepository;
 import com.mdev.chatcord.server.exception.BusinessException;
@@ -16,7 +16,6 @@ import com.mdev.chatcord.server.user.model.Profile;
 import com.mdev.chatcord.server.user.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -76,20 +75,30 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public MessageDTO setSeenMessage(MessageDTO message){
-        Message messageEntity = messageRepository.findByUuid(message.getMessageUUID()).orElseThrow(() ->
+    public void updateMessageStatus(MessageStatusDTO dto){
+        Message messageEntity = messageRepository.findByUuid(UUID.fromString(dto.getMessageUuid())).orElseThrow(() ->
                 new BusinessException(ExceptionCode.MESSAGE_NOT_FOUND));
 
-        messageEntity.setState(EMessageStatus.SEEN);
+        messageEntity.setState(EMessageStatus.valueOf(dto.getMessageStatusName()));
         messageEntity.setSeenAt(LocalDateTime.now());
         messageRepository.save(messageEntity);
 
-        message.setMessageStatus(EMessageStatus.SEEN);
-        message.setSeenAt(LocalDateTime.now());
+        try {
+            messagingTemplate.convertAndSendToUser(dto.getSenderUuid().toLowerCase(),
+                    "/queue/private/message.state", dto);
+        } catch (Exception e){
+            log.warn("Couldn't send update to Message UUID: {} Sender {}.", messageEntity.getUuid().toString(),
+                    messageEntity.getSender().getUsername());
+        }
 
-        messagingTemplate.convertAndSendToUser(message.getSender().getUuid(), "/queue/private/message.state", message);
+        try {
+            messagingTemplate.convertAndSendToUser(dto.getReceiverUuid().toLowerCase(),
+                    "/queue/private/message.state", dto);
+        } catch (Exception e){
+            log.warn("Couldn't send update to Message UUID: {} Receiver {}.", messageEntity.getUuid().toString(),
+                    messageEntity.getSender().getUsername());
+        }
 
-        return message;
     }
 
     @Override
@@ -98,7 +107,7 @@ public class MessageServiceImpl implements MessageService {
 
         // Fetch all messages with the given status (e.g., DELIVERED)
         List<Message> messages = messageRepository
-                .findAllByChat_UuidAndSender_UuidNotAndMessageStatus(chatId, receiverUUID, status, Pageable.unpaged())
+                .findMessagesForChatExceptSenderWithState(chatId, receiverUUID, EMessageStatus.DELIVERED, Pageable.unpaged())
                 .getContent();
 
         if (messages.isEmpty()) return Collections.emptyList();
@@ -107,7 +116,7 @@ public class MessageServiceImpl implements MessageService {
         List<MessageDTO> updatedDTOs = new ArrayList<>();
 
         for (Message message : messages) {
-            message.setState(EMessageStatus.SEEN);
+            message.setState(status);
             message.setSeenAt(LocalDateTime.now());
 
 

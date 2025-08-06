@@ -16,12 +16,21 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     Optional<Message> findBySenderId(Long sender_id);
     Optional<Message> findByUuid(UUID uuid);
-    Page<Message> findAllByChat_UuidAndMessageStatus(UUID chatUuid, EMessageStatus status, Pageable pageable);
+    //Page<Message> findAllByChat_UuidAndMessageStatus(UUID chatUuid, EMessageStatus status, Pageable pageable);
 
-    Page<Message> findAllByChat_UuidAndSender_UuidNotAndMessageStatus(
+    @Query("SELECT m FROM Message m " +
+            "WHERE m.chat.uuid = :chatUuid " +
+            "AND m.sender.uuid <> :receiverUuid " +
+            "AND m.state = :state")
+    Page<Message> findMessagesForChatExceptSenderWithState(@Param("chatUuid") UUID chatUuid,
+                                                           @Param("receiverUuid") UUID receiverUuid,
+                                                           @Param("state") EMessageStatus state,
+                                                           Pageable pageable);
+
+    Page<Message> findAllByChat_UuidAndSender_UuidNotAndState(
             UUID chatUuid,
             UUID senderUuid,
-            EMessageStatus status,
+            EMessageStatus state,
             Pageable pageable
     );
 

@@ -207,7 +207,7 @@ public class  AuthenticationService {
 
         // Delete profile and account
         profileRepository.delete(profile);
-        if (account != null) accountRepository.delete(account);
+        accountRepository.delete(account);
     }
 
     private Set<SimpleGrantedAuthority> mapRolesToAuthorities(Set<ERoles> userRoles) {
@@ -241,10 +241,7 @@ public class  AuthenticationService {
             else {
                 // This is a validation check, NOT YET LOGGED IN.
                emailService.validateNewDevice(email, deviceDto.getOS(), deviceDto.getDEVICE_NAME(), IP_ADDRESS);
-               throw new BusinessException(ExceptionCode.DEVICE_NOT_RECOGNIZED,
-                       "Suspicious Login in a new device: \n Device: " + deviceDto.getOS() +
-                       " \n DeviceName: " + deviceDto.getDEVICE_NAME() + " \n Country: " +
-                       location.getCountry() + " \n City: " + location.getCity());
+               throw new BusinessException(ExceptionCode.DEVICE_NOT_RECOGNIZED);
             }
         }
         else {
